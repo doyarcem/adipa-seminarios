@@ -9,9 +9,16 @@
  */
 
 import 'server-only';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { hasPermission, type Permission, type Role } from '@/lib/auth/roles';
+import {
+  PREVIEW_ROLE_COOKIE,
+  getPreviewIdentity,
+  isAuthBypassEnabled,
+  isRole,
+} from '@/lib/auth/bypass';
 
 export interface AuthContext {
   userId: string;
@@ -33,8 +40,34 @@ export class AuthorizationError extends Error {
   }
 }
 
+/**
+ * Sesion sintetica de vista previa, o null si el modo no esta activo.
+ *
+ * Se consulta ANTES que Auth.js: cuando el modo esta encendido no hay login que
+ * validar. El rol se lee de una cookie para poder alternar entre las dos vistas
+ * sin reiniciar el servidor.
+ */
+async function getPreviewSession(): Promise<AuthContext | null> {
+  if (!isAuthBypassEnabled()) return null;
+
+  const store = await cookies();
+  const raw = store.get(PREVIEW_ROLE_COOKIE)?.value;
+  const identity = getPreviewIdentity(isRole(raw) ? raw : 'OPERATOR');
+
+  return {
+    userId: identity.userId,
+    email: identity.email,
+    name: identity.name,
+    role: identity.role,
+    locale: 'es',
+  };
+}
+
 /** Exige sesion iniciada. Lanza si no la hay. */
 export async function requireSession(): Promise<AuthContext> {
+  const preview = await getPreviewSession();
+  if (preview) return preview;
+
   const session = await auth();
   if (!session?.user?.id || !session.user.email) throw new AuthorizationError('UNAUTHENTICATED');
 
