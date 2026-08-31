@@ -1,0 +1,454 @@
+// Modelo de datos - App de Sorteos en Vivo ADIPA
+// Principio rector: los snapshots y los sorteos son INMUTABLES una vez creados.
+// Nada en este esquema permite reescribir la historia de un sorteo (seccion 55).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------- Usuarios y roles ---------------------------
+
+enum Role {
+  ADMIN
+  OPERATOR
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  passwordHash  String? // solo para operadores creados con credenciales
+
+  /// Rol EFECTIVO. Se recalcula en servidor en cada login a partir del dominio del email.
+  /// Nunca se acepta desde el cliente (secciones 6 y 40).
+  role Role @default(OPERATOR)
+
+  /// true cuando el rol proviene de la regla de dominio ADIPA y por tanto no es editable.
+  roleLockedByDomain Boolean @default(false)
+
+  active    Boolean  @default(true)
+  locale    String   @default("es")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  linkedZoom    ZoomAccount[]    @relation("ZoomAccountLinkedBy")
+  snapshots     Snapshot[]
+  draws         Draw[]
+  overrides     ManualOverride[]
+  validatedWins DrawWinner[]     @relation("WinnerValidatedBy")
+  auditLogs     AuditLog[]
+
+  @@index([role, active])
+}
+
+// Tablas requeridas por Auth.js (adaptador Prisma)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// --------------------------- Cuentas Zoom ---------------------------
+
+enum ZoomAuthMode {
+  OAUTH_ACCOUNT_LEVEL // 3-legged, flujo "vincular cuenta" desde la UI
+  SERVER_TO_SERVER // credenciales pegadas por el admin
+}
+
+enum ZoomAccountStatus {
+  CONNECTED
+  NEEDS_REAUTH
+  DISABLED
+  ERROR
+}
+
+model ZoomAccount {
+  id String @id @default(cuid())
+
+  /// Nombre visible para el operador, por ejemplo "ADIPA Chile"
+  displayName String
+
+  /// account_id de Zoom
+  zoomAccountId String @unique
+
+  /// Email de la cuenta/owner que autorizo
+  ownerEmail String?
+
+  authMode ZoomAuthMode      @default(OAUTH_ACCOUNT_LEVEL)
+  status   ZoomAccountStatus @default(CONNECTED)
+
+  /// Tokens cifrados con AES-256-GCM. NUNCA se serializan hacia el cliente (secciones 40 y 53).
+  accessTokenEnc  String? @db.Text
+  refreshTokenEnc String? @db.Text
+
+  /// Solo para SERVER_TO_SERVER
+  clientIdEnc     String? @db.Text
+  clientSecretEnc String? @db.Text
+
+  accessTokenExpiresAt DateTime?
+  grantedScopes        String?   @db.Text
+
+  /// Detectado en la primera llamada: si el plan no soporta Dashboard API.
+  dashboardApiAvailable Boolean @default(true)
+
+  /// Emails de co-hosts conocidos, mantenidos por el admin (mitigacion seccion 16).
+  knownCoHostEmails String[] @default([])
+
+  lastCheckedAt DateTime?
+  lastErrorCode String?
+  lastErrorAt   DateTime?
+
+  linkedById String?
+  linkedBy   User?   @relation("ZoomAccountLinkedBy", fields: [linkedById], references: [id], onDelete: SetNull)
+
+  visibleToOperators Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  meetings Meeting[]
+
+  @@index([status])
+}
+
+// --------------------------- Reuniones ---------------------------
+
+model Meeting {
+  id            String      @id @default(cuid())
+  zoomAccountId String
+  zoomAccount   ZoomAccount @relation(fields: [zoomAccountId], references: [id], onDelete: Cascade)
+
+  /// UUID de la INSTANCIA de reunion. Es la clave real: el id numerico se repite
+  /// en reuniones recurrentes y no distingue instancias simultaneas.
+  zoomMeetingUuid String
+  zoomMeetingId   String
+  topic           String
+  hostName        String?
+  hostEmail       String?
+  startTime       DateTime?
+  endedAt         DateTime?
+
+  /// Emails de alternative hosts leidos de la configuracion de la reunion.
+  alternativeHostEmails String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  snapshots  Snapshot[]
+  draws      Draw[]
+  rosterRows LiveRosterEntry[]
+
+  /// Una instancia de reunion no se puede duplicar entre cuentas (seccion 54: nunca mezclar).
+  @@unique([zoomAccountId, zoomMeetingUuid])
+  @@index([zoomAccountId, endedAt])
+}
+
+/// Roster en vivo alimentado por webhooks. Fuente alternativa cuando el plan Zoom
+/// no habilita las APIs de Dashboard. Ver docs/00-ZOOM-RESEARCH.md seccion 3.
+model LiveRosterEntry {
+  id        String  @id @default(cuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  participantUuid String
+  userName        String
+  zoomUserId      String?
+  email           String?
+  joinedAt        DateTime
+  leftAt          DateTime?
+
+  @@unique([meetingId, participantUuid])
+  @@index([meetingId, leftAt])
+}
+
+// --------------------------- Snapshots ---------------------------
+
+enum ParticipantSource {
+  ZOOM_DASHBOARD
+  ZOOM_WEBHOOK_ROSTER
+  EXCEL
+}
+
+model Snapshot {
+  id        String  @id @default(cuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  /// Correlativo por reunion: 1, 2, 3... (seccion 11)
+  sequence Int
+
+  source ParticipantSource
+
+  /// Momento exacto de la extraccion (seccion 11).
+  capturedAt DateTime @default(now())
+
+  totalFound    Int
+  totalEligible Int
+  totalExcluded Int
+
+  /// Nombre del archivo cuando source = EXCEL.
+  sourceFileName String?
+
+  /// true si este es el snapshot que alimenta los proximos sorteos de la reunion.
+  isActive Boolean @default(true)
+
+  capturedById String?
+  capturedBy   User?   @relation(fields: [capturedById], references: [id], onDelete: SetNull)
+
+  participants SnapshotParticipant[]
+  draws        Draw[]
+  overrides    ManualOverride[]
+
+  @@unique([meetingId, sequence])
+  @@index([meetingId, isActive])
+}
+
+enum ExclusionReason {
+  HOST
+  CO_HOST
+  ADIPA_NAME
+  DUPLICATE_NAME
+  INCOMPLETE_NAME
+  DEVICE_NAME
+  PREVIOUS_WINNER
+  MANUAL
+  OTHER
+}
+
+model SnapshotParticipant {
+  id         String   @id @default(cuid())
+  snapshotId String
+  snapshot   Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  /// Nombre tal como lo reporta Zoom, sin normalizar. Es el dato que ve el operador.
+  displayName String
+
+  /// Nombre normalizado (NFC + espacios colapsados) usado para detectar duplicados
+  /// EXACTOS. Deliberadamente NO se baja a minusculas ni se quitan tildes (secciones 17 y 51).
+  normalizedName String
+
+  /// Nombre de persona extraido por el motor ("Android de Daniel Oyarce" -> "Daniel Oyarce").
+  personName String?
+
+  zoomParticipantId String?
+  zoomUserId        String?
+  email             String?
+  device            String?
+  joinTime          DateTime?
+
+  /// Rol detectado por la cascada de identidad. UNKNOWN es el caso normal
+  /// para asistentes: la API de Zoom no expone el rol (ver 00-ZOOM-RESEARCH.md seccion 2).
+  detectedRole String @default("UNKNOWN") // HOST | CO_HOST | STAFF | UNKNOWN
+
+  /// Resultado del motor automatico, antes de intervencion manual.
+  autoEligible        Boolean
+  autoExclusionReason ExclusionReason?
+
+  /// Decision manual del operador. null = sin intervencion (seccion 19).
+  manualOverride Boolean?
+
+  /// Estado final = manualOverride ?? autoEligible, salvo HOST/CO_HOST que es inanulable.
+  eligible Boolean
+
+  /// Traza legible de las reglas aplicadas, para poder explicar la decision en UI (seccion 18).
+  evaluationTrace Json?
+
+  createdAt DateTime @default(now())
+
+  winners DrawWinner[]
+
+  @@index([snapshotId, eligible])
+  @@index([snapshotId, normalizedName])
+}
+
+model ManualOverride {
+  id         String   @id @default(cuid())
+  snapshotId String
+  snapshot   Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  participantId String
+  previousState Boolean
+  newState      Boolean
+  autoReason    ExclusionReason?
+  note          String?
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([snapshotId])
+}
+
+// --------------------------- Sorteos ---------------------------
+
+enum DrawStatus {
+  RUNNING
+  COMPLETED
+  CANCELLED
+}
+
+model Draw {
+  id         String   @id @default(cuid())
+  meetingId  String
+  meeting    Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  snapshotId String
+  snapshot   Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+
+  /// Correlativo por reunion: Sorteo #1, #2, #3... (seccion 24)
+  sequence Int
+
+  requestedWinners Int
+  actualWinners    Int
+  countdownSeconds Int
+
+  /// Tamano y huella del universo CONGELADO al iniciar (seccion 55).
+  poolSize Int
+
+  /// SHA-256 de los ids del pool ordenados. Permite verificar despues que el
+  /// sorteo se ejecuto sobre exactamente ese conjunto.
+  poolHash String
+
+  status DrawStatus @default(RUNNING)
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  operatorId String?
+  operator   User?   @relation(fields: [operatorId], references: [id], onDelete: SetNull)
+
+  winners DrawWinner[]
+
+  @@unique([meetingId, sequence])
+  @@index([meetingId])
+}
+
+enum WinnerStatus {
+  PENDING
+  VALIDATED
+  AL_AGUA
+}
+
+model DrawWinner {
+  id     String @id @default(cuid())
+  drawId String
+  draw   Draw   @relation(fields: [drawId], references: [id], onDelete: Cascade)
+
+  participantId String
+  participant   SnapshotParticipant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+
+  /// Nombre congelado al momento de ganar. No se recalcula nunca.
+  winnerName String
+
+  /// 1, 2, 3... dentro del sorteo (seccion 32).
+  position Int
+
+  status WinnerStatus @default(PENDING)
+
+  /// Cuando este ganador va "Al agua", apunta al ganador que lo sustituyo (seccion 12).
+  replacedByWinnerId String?     @unique
+  replacedByWinner   DrawWinner? @relation("AlAguaReplacement", fields: [replacedByWinnerId], references: [id], onDelete: SetNull)
+  replaces           DrawWinner? @relation("AlAguaReplacement")
+
+  alAguaReason String?
+  alAguaAt     DateTime?
+
+  validatedAt   DateTime?
+  validatedById String?
+  validatedBy   User?     @relation("WinnerValidatedBy", fields: [validatedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  certificate Certificate?
+
+  @@index([drawId, status])
+}
+
+model Certificate {
+  id       String     @id @default(cuid())
+  winnerId String     @unique
+  winner   DrawWinner @relation(fields: [winnerId], references: [id], onDelete: Cascade)
+
+  /// Ruta relativa dentro de storage/certificates
+  filePath String
+  fileName String
+  widthPx  Int
+  heightPx Int
+
+  /// Copy usado ("winner" | "scholarship") - ver contradiccion 5 en 01-ARQUITECTURA.md
+  copyVariant String @default("winner")
+  locale      String @default("es")
+
+  createdAt DateTime @default(now())
+}
+
+// --------------------------- Auditoria ---------------------------
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  /// Verbo de dominio: USER_LOGIN, ZOOM_ACCOUNT_LINKED, MEETING_SELECTED,
+  /// PARTICIPANTS_EXTRACTED, SNAPSHOT_CREATED, PARTICIPANT_INCLUDED,
+  /// PARTICIPANT_EXCLUDED, DRAW_STARTED, WINNER_SELECTED, WINNER_VALIDATED,
+  /// WINNER_AL_AGUA, CERTIFICATE_GENERATED, RESULTS_EXPORTED, ZOOM_ERROR
+  action String
+
+  actorId    String?
+  actor      User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail String? // congelado, sobrevive al borrado del usuario
+
+  meetingId     String?
+  snapshotId    String?
+  drawId        String?
+  zoomAccountId String?
+
+  /// Payload libre con lo relevante del evento.
+  detail Json?
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([meetingId, createdAt])
+  @@index([action, createdAt])
+}

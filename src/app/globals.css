@@ -1,0 +1,220 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   Tokens de marca ADIPA
+   Fuente: DESIGN.md. No inventar colores ni aproximarlos desde capturas.
+   ========================================================================== */
+
+@theme {
+  /* Colores corporativos principales (DESIGN.md 9.2) */
+  --color-brand-primary: #704efd;
+  --color-brand-secondary: #2cb7ff;
+  --color-brand-surface-soft: #f3f4ff;
+
+  /* Complementarios (DESIGN.md 9.3) */
+  --color-brand-navy: #091e42;
+  --color-brand-blue-soft: #cbe8ff;
+  --color-brand-lavender: #dfd5ff;
+
+  /* Colores activos, solo para enfasis (DESIGN.md 9.5) */
+  --color-brand-magenta: #ff017c;
+  --color-brand-yellow: #ffc728;
+  --color-brand-orange: #ff7415;
+  --color-brand-red: #f61710;
+
+  /* Escuelas (DESIGN.md 10.2) */
+  --color-school-adult: #432d86;
+  --color-school-child: #0272aa;
+  --color-school-org: #b20000;
+  --color-school-edu: #00770e;
+  --color-school-legal: #cc6a00;
+
+  /* Tokens de UI pendientes de aprobacion de marca (DESIGN.md 15.5) */
+  --color-fg-default: #1d1d1d;
+  --color-fg-muted: #5b6987;
+  --color-fg-subtle: #8c93a8;
+  --color-border-subtle: #e3e8f3;
+  --color-border-strong: #9ba7bd;
+  --color-state-success: #4dc247;
+  --color-state-error: #d9485f;
+
+  /* Tipografia: Poppins, fallback Helvetica (DESIGN.md 11) */
+  --font-sans: 'Poppins', Helvetica, sans-serif;
+
+  /* Radios de UI: 4 / 6 / 8 px (DESIGN.md 15.4) */
+  --radius-adipa-sm: 4px;
+  --radius-adipa-md: 6px;
+  --radius-adipa-card: 8px;
+  --radius-adipa-control: 8px;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-brand-surface-soft);
+  color: var(--color-fg-default);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* DESIGN.md 11.2: en producto digital el peso maximo es Bold (700).
+   Extra Bold queda reservado a marketing e impresos. */
+.font-extrabold {
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   Card estandar (DESIGN.md 15.4)
+   ========================================================================== */
+
+.adipa-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-adipa-card);
+  box-shadow: 0 1px 3px rgb(9 30 66 / 0.15);
+}
+
+.adipa-card-interactive {
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.adipa-card-interactive:hover {
+  border-color: rgb(112 78 253 / 0.24);
+  box-shadow: 0 6px 18px rgb(9 30 66 / 0.08);
+}
+
+/* Overlay unico para modales y drawers (DESIGN.md 3) */
+.adipa-overlay {
+  background: rgb(9 30 66 / 0.58);
+  backdrop-filter: blur(4px);
+}
+
+/* Gradiente estandar de marca (DESIGN.md 9.7) */
+.adipa-gradient {
+  background-image: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+}
+
+/* ==========================================================================
+   Pantalla de sorteo
+   ========================================================================== */
+
+/* Cifras grandes: tabular para que la cuenta regresiva no "salte" al cambiar. */
+.adipa-countdown {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+
+@keyframes adipa-pulse-ring {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.75;
+  }
+  70% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+.adipa-pulse-ring {
+  animation: adipa-pulse-ring 1s ease-out infinite;
+}
+
+@keyframes adipa-reel-in {
+  from {
+    opacity: 0;
+    transform: translateY(38%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.adipa-reel-item {
+  animation: adipa-reel-in 90ms linear;
+}
+
+@keyframes adipa-winner-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.adipa-winner-in {
+  animation: adipa-winner-in 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes adipa-confetti-fall {
+  0% {
+    transform: translateY(-12vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(105vh) rotate(680deg);
+    opacity: 0.15;
+  }
+}
+
+.adipa-confetti {
+  animation: adipa-confetti-fall linear forwards;
+}
+
+/* Respeta a quien pidio menos movimiento. El resultado del sorteo se comunica
+   por texto, nunca solo por animacion. */
+@media (prefers-reduced-motion: reduce) {
+  .adipa-pulse-ring,
+  .adipa-reel-item,
+  .adipa-winner-in,
+  .adipa-confetti {
+    animation: none !important;
+  }
+}
+
+/* ==========================================================================
+   Accesibilidad
+   ========================================================================== */
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+.adipa-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
