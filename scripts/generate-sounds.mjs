@@ -126,7 +126,9 @@ function renderSpin() {
   const samples = new Float64Array(total);
   const random = makeRandom(20260831);
 
-  const strokesPerSecond = 34;
+  // Velocidad del redoble. Mas alto suena a redoble cerrado ("buzz"), mas bajo
+  // deja oir cada golpe por separado y genera mas tension.
+  const strokesPerSecond = 20;
   const strokeCount = Math.round(duration * strokesPerSecond);
   const interval = total / strokeCount;
 
@@ -143,7 +145,7 @@ function renderSpin() {
   for (let i = 0; i < total; i++) {
     const noise = random() * 2 - 1;
     sizzle += (noise - sizzle) * 0.6;
-    samples[i] += sizzle * 0.035;
+    samples[i] += sizzle * 0.025;
   }
 
   return applyEdgeFades(normalize(Array.from(samples), 0.72), 0.004);
