@@ -30,6 +30,11 @@ interface Props {
   mode?: LogoMode;
   /** Alto en pixeles. El ancho lo define la proporcion del archivo original. */
   height?: number;
+  /**
+   * Clases de tamano para el respaldo tipografico, cuando debe escalar con el
+   * viewport en vez de tener un alto fijo. Sustituye al calculo desde `height`.
+   */
+  wordmarkClassName?: string;
   className?: string;
 }
 
@@ -48,6 +53,7 @@ export function AdipaLogo({
   variant = 'logotype',
   mode = 'full-color',
   height = 28,
+  wordmarkClassName,
   className = '',
 }: Props) {
   const [missing, setMissing] = useState(false);
@@ -67,14 +73,16 @@ export function AdipaLogo({
   }, []);
 
   if (missing) {
+    // El respaldo va en mayusculas: es un sustituto de logotipo, no texto corrido.
+    // DESIGN.md admite "ADIPA" en mayusculas cuando se destaca la marca.
     return (
       <span
-        className={`font-bold tracking-tight ${
+        className={`font-bold leading-none tracking-tight ${
           mode === 'white' ? 'text-white' : 'text-brand-primary'
-        } ${className}`}
-        style={{ fontSize: height * 0.72, lineHeight: 1 }}
+        } ${wordmarkClassName ?? ''} ${className}`}
+        style={wordmarkClassName ? undefined : { fontSize: height * 0.72, lineHeight: 1 }}
       >
-        Adipa
+        ADIPA
       </span>
     );
   }

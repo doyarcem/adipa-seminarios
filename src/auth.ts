@@ -18,7 +18,7 @@ import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import Zoom from 'next-auth/providers/zoom';
 import type { Provider } from 'next-auth/providers';
-import { canSignIn, extractDomain, resolveRole, type Role } from '@/lib/auth/roles';
+import { canSignIn, resolveRole, type Role } from '@/lib/auth/roles';
 
 declare module 'next-auth' {
   interface Session {
@@ -92,9 +92,13 @@ function buildProviders(): Provider[] {
          */
         authorize: async (credentials) => {
           const email = String(credentials?.email ?? '').trim().toLowerCase();
-          if (!extractDomain(email)) return null;
+          // Basta con que haya escrito algo. No se exige un dominio valido: si se
+          // exigiera, un correo como "prueba@prueba" seria rechazado y el formulario
+          // dejaria de avanzar aunque el boton de Google si lo hiciera, que es
+          // justo la incoherencia que se quiere evitar en la demostracion.
+          if (email.length === 0) return null;
 
-          return { id: `dev:${email}`, email, name: email.split('@')[0] };
+          return { id: `dev:${email}`, email, name: email.split('@')[0] || email };
         },
       }),
     );

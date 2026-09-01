@@ -153,13 +153,10 @@ export function DrawStage({
   return (
     <div
       ref={stageRef}
-      /* Azul de marca durante la antesala, la cuenta regresiva y la ruleta: la
-         pantalla ya esta compartida por Zoom antes de que empiece el sorteo.
-         La revelacion del ganador conserva el gradiente morado-cyan original,
-         que es el momento donde la marca se muestra en su version plena. */
-      className={`relative flex min-h-dvh flex-col overflow-hidden text-white ${
-        phase === 'winner' ? 'adipa-gradient' : 'adipa-stage-blue'
-      }`}
+      /* El gradiente de marca acompana todo el sorteo, desde la antesala hasta la
+         revelacion. La pantalla ya esta compartida por Zoom antes de empezar, y
+         cambiar el fondo a mitad de camino distraia de lo que importa. */
+      className="adipa-gradient relative flex min-h-dvh flex-col overflow-hidden text-white"
     >
       {/* Durante la funcion el orden se invierte: el logo pasa a la esquina superior
           derecha y los controles se van a la izquierda, atenuados. Asi la marca ocupa
@@ -170,7 +167,11 @@ export function DrawStage({
         }`}
       >
         <div className="transition-all duration-500">
-          <AdipaLogo mode="white" height={showLargeLogo ? 56 : 32} />
+          <AdipaLogo
+            mode="white"
+            height={phase === 'winner' ? 96 : showLargeLogo ? 56 : 32}
+            wordmarkClassName={phase === 'winner' ? 'text-[clamp(2.5rem,9vw,7rem)]' : undefined}
+          />
         </div>
 
         <div className={`flex items-center gap-2 ${showLargeLogo ? 'mr-auto' : 'ml-auto'}`}>
@@ -412,11 +413,6 @@ function WinnerReveal({ winners, topic }: { winners: WinnerDto[]; topic: string 
       <p className={`mt-8 font-semibold uppercase tracking-[0.2em] text-white/90 ${headlineSize}`}>
         {tw('congrats')}
       </p>
-
-      {/* La marca cierra el momento de mayor atencion de todo el seminario. */}
-      <div className="mt-10 flex justify-center">
-        <AdipaLogo mode="white" height={64} />
-      </div>
     </div>
   );
 }

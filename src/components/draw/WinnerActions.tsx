@@ -175,26 +175,33 @@ export function WinnerActions({ meetingId, drawId, winners, onChanged }: Props) 
         </ul>
       )}
 
-      {/* Salida hacia el resultado completo: Excel y trazabilidad (secciones 36 y 55). */}
-      {drawId && (
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-[13px]">
-          <a
-            href={`/api/resultados/${drawId}`}
-            className="font-semibold text-white underline-offset-4 hover:underline"
-          >
-            {tw('downloadResults')}
-          </a>
-          <span aria-hidden className="text-white/40">
-            ·
-          </span>
-          <Link
-            href={`/monitor/resultado/${drawId}`}
-            className="font-semibold text-white/90 underline-offset-4 hover:underline"
-          >
-            Ver resultado completo
-          </Link>
-        </div>
-      )}
+      {/* Salidas: volver a la lista de participantes extraidos, descargar el Excel
+          y abrir el resultado completo con la trazabilidad (secciones 36 y 55). */}
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <Link
+          href={`/monitor/${meetingId}`}
+          className="rounded-adipa-control bg-white/15 px-5 py-2.5 text-[14px] font-semibold text-white ring-1 ring-white/30 transition hover:bg-white/25"
+        >
+          ← Volver a los participantes
+        </Link>
+
+        {drawId && (
+          <>
+            <a
+              href={`/api/resultados/${drawId}`}
+              className="rounded-adipa-control bg-white/15 px-5 py-2.5 text-[14px] font-semibold text-white ring-1 ring-white/30 transition hover:bg-white/25"
+            >
+              {tw('downloadResults')}
+            </a>
+            <Link
+              href={`/monitor/resultado/${drawId}`}
+              className="rounded-adipa-control px-5 py-2.5 text-[14px] font-semibold text-white/90 underline-offset-4 transition hover:underline"
+            >
+              Ver resultado completo
+            </Link>
+          </>
+        )}
+      </div>
 
       <ConfirmDialog
         open={alAguaTarget !== null}

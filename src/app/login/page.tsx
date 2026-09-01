@@ -33,10 +33,11 @@ export default async function LoginPage({
         <AdipaLogo mode="white" height={34} className="relative" />
 
         <div className="relative max-w-md space-y-4">
-          <h1 className="text-4xl font-bold leading-tight tracking-tight">Sorteos en vivo</h1>
+          <h1 className="text-4xl font-bold leading-tight tracking-tight">
+            Aplicación para seminarios de ADIPA
+          </h1>
           <p className="text-base leading-relaxed text-white/80">
-            Extrae a quienes están conectados, revisa la lista y realiza el sorteo mientras
-            compartes pantalla, con respaldo auditable de cada paso.
+            Aplicación para realizar los sorteos de seminarios en ADIPA.
           </p>
         </div>
 

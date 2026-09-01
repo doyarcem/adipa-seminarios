@@ -24,8 +24,8 @@
     "copied": "Copied"
   },
   "auth": {
-    "signInTitle": "Sign in to Adipa Draws",
-    "signInSubtitle": "Run live draws during your seminars and meetings.",
+    "signInTitle": "Seminar draw application - ADIPA",
+    "signInSubtitle": "Sign in with your account to get started.",
     "signInWithGoogle": "Sign in with a Google account",
     "email": "Email address",
     "password": "Password",

@@ -179,12 +179,13 @@ body {
   }
   100% {
     transform: translateY(105vh) rotate(680deg);
-    opacity: 0.15;
+    opacity: 0.6;
   }
 }
 
+/* Infinito: el confeti no debe detenerse mientras el ganador siga en pantalla. */
 .adipa-confetti {
-  animation: adipa-confetti-fall linear forwards;
+  animation: adipa-confetti-fall linear infinite;
 }
 
 /* Respeta a quien pidio menos movimiento. El resultado del sorteo se comunica
