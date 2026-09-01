@@ -128,7 +128,8 @@
     "notEnoughParticipants": "No hay usuarios seleccionados disponibles para sortear.",
     "fewerThanRequested": "Se seleccionarán {actual} de los {requested} solicitados, porque es la cantidad disponible.",
     "muteSound": "Silenciar",
-    "unmuteSound": "Activar sonido"
+    "unmuteSound": "Activar sonido",
+    "volume": "Volumen"
   },
   "winner": {
     "single": "¡Tenemos ganador!",

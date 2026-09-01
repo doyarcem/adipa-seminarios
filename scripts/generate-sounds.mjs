@@ -1,8 +1,8 @@
 /**
  * Genera los efectos de sonido del sorteo (seccion 30).
  *
- *   spin.wav   -> bed de ruleta girando, disenado para reproducirse en LOOP
- *                 mientras dura la animacion (la duracion la fija el operador).
+ *   spin.wav   -> redoble de tambores, disenado para reproducirse en LOOP
+ *                 mientras dura la cuenta regresiva (la duracion la fija el operador).
  *   winner.wav -> revelacion del ganador: acorde ascendente + brillo.
  *
  * Sintesis propia con WAV PCM de 16 bits. Sin dependencias, sin audio de terceros,
@@ -78,37 +78,47 @@ function applyEdgeFades(samples, fadeSeconds = 0.005) {
   return samples;
 }
 
-// ─────────────────────────── ruleta ───────────────────────────
+// ─────────────────────────── redoble de tambores ───────────────────────────
 
 /**
- * Un "tick" de ruleta: golpe corto de ruido filtrado con un cuerpo tonal breve.
- * Es lo que produce la sensacion de rueda pasando por los topes.
+ * Un golpe de caja: ruido filtrado con caida rapida (el parche y las bordonas)
+ * mas un cuerpo tonal grave que le da peso.
  */
-function renderTick(target, startSample, random, pitch) {
-  const length = seconds(0.028);
+function renderStroke(target, startSample, random, amplitude) {
+  const length = seconds(0.035);
   let lowpass = 0;
+  let highpass = 0;
+  let previousNoise = 0;
 
   for (let i = 0; i < length; i++) {
     const index = startSample + i;
     if (index >= target.length) return;
 
     const t = i / SAMPLE_RATE;
-    const envelope = Math.exp(-t * 190);
+    const envelope = Math.exp(-t * 145);
 
-    // Ruido filtrado paso-bajo: el "click" de madera.
     const noise = random() * 2 - 1;
-    lowpass += (noise - lowpass) * 0.45;
 
-    // Cuerpo tonal que le da altura al click.
-    const body = Math.sin(2 * Math.PI * pitch * t) * 0.55;
+    // Paso-bajo: el cuerpo del parche.
+    lowpass += (noise - lowpass) * 0.35;
+    // Paso-alto: el siseo metalico de las bordonas.
+    highpass = 0.85 * (highpass + noise - previousNoise);
+    previousNoise = noise;
 
-    target[index] += (lowpass * 0.8 + body) * envelope * 0.5;
+    // Tono grave con caida mas lenta: el aro de la caja resonando.
+    const body = Math.sin(2 * Math.PI * 185 * t) * Math.exp(-t * 70) * 0.35;
+
+    target[index] += (lowpass * 0.5 + highpass * 0.55 + body) * envelope * amplitude;
   }
 }
 
 /**
- * Bed de ruleta pensado para LOOP perfecto: la cantidad de ticks es entera y
- * el ultimo cierra justo antes del final, asi el empalme no se escucha.
+ * Redoble de tambores, pensado para reproducirse en LOOP mientras dura la cuenta
+ * regresiva (seccion 30). La cantidad de golpes es entera y el ultimo cierra justo
+ * antes del final, de modo que el empalme del loop no se escucha.
+ *
+ * El patron alterna manos con acento cada cuatro golpes, que es lo que hace que
+ * suene a redoble militar y no a ruido continuo.
  */
 function renderSpin() {
   const duration = 2.0;
@@ -116,25 +126,27 @@ function renderSpin() {
   const samples = new Float64Array(total);
   const random = makeRandom(20260831);
 
-  const ticksPerSecond = 15;
-  const tickCount = Math.round(duration * ticksPerSecond);
-  const interval = total / tickCount;
+  const strokesPerSecond = 34;
+  const strokeCount = Math.round(duration * strokesPerSecond);
+  const interval = total / strokeCount;
 
-  for (let i = 0; i < tickCount; i++) {
-    // Pequena variacion de altura para que no suene mecanico ni sintetico.
-    const pitch = 1650 + (i % 4) * 55;
-    renderTick(samples, Math.round(i * interval), random, pitch);
+  for (let i = 0; i < strokeCount; i++) {
+    // Acento cada cuatro golpes y alternancia suave entre manos.
+    const accent = i % 4 === 0 ? 1 : i % 2 === 0 ? 0.72 : 0.6;
+    // Micro-desplazamiento humano: un redoble perfectamente cuadriculado suena a maquina.
+    const jitter = (random() - 0.5) * interval * 0.12;
+    renderStroke(samples, Math.round(i * interval + jitter), random, accent);
   }
 
-  // Zumbido grave de fondo: da cuerpo y sensacion de masa girando.
+  // Siseo continuo de las bordonas, muy bajo, que rellena los huecos entre golpes.
+  let sizzle = 0;
   for (let i = 0; i < total; i++) {
-    const t = i / SAMPLE_RATE;
-    // La frecuencia describe un ciclo completo dentro del loop para que empalme.
-    const wobble = Math.sin((2 * Math.PI * i) / total);
-    samples[i] += Math.sin(2 * Math.PI * (78 + wobble * 5) * t) * 0.06;
+    const noise = random() * 2 - 1;
+    sizzle += (noise - sizzle) * 0.6;
+    samples[i] += sizzle * 0.035;
   }
 
-  return applyEdgeFades(normalize(Array.from(samples), 0.7), 0.004);
+  return applyEdgeFades(normalize(Array.from(samples), 0.72), 0.004);
 }
 
 // ─────────────────────────── ganador ───────────────────────────

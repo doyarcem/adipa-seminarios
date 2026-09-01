@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { runDrawAction, type WinnerDto } from '@/server/actions/draws';
+import { AdipaLogo } from '@/components/AdipaLogo';
 import { useDrawSound } from './useDrawSound';
 import { WinnerActions } from './WinnerActions';
 
@@ -34,7 +35,6 @@ export function DrawStage({
   reelNames,
 }: Props) {
   const t = useTranslations('draw');
-  const tw = useTranslations('winner');
   const router = useRouter();
   const sound = useDrawSound();
 
@@ -69,7 +69,7 @@ export function DrawStage({
    * Arranca el sorteo.
    *
    * El servidor decide y persiste el resultado de INMEDIATO; la cuenta regresiva y
-   * la ruleta corren en paralelo. Asi la animacion nunca puede quedar sin desenlace
+   * el redoble corren en paralelo. Asi la animacion nunca puede quedar sin desenlace
    * por un problema de red delante de la audiencia.
    */
   const start = useCallback(() => {
@@ -82,8 +82,7 @@ export function DrawStage({
       if (result.ok && result.winners) {
         resultRef.current = result.winners;
         setDrawId(result.drawId ?? null);
-      }
-      else {
+      } else {
         resultRef.current = null;
         setError(result.error ?? 'UNKNOWN');
       }
@@ -143,57 +142,85 @@ export function DrawStage({
     };
   }, [phase]);
 
-  // Al desmontar, el audio de ruleta no puede quedar sonando.
+  // Al desmontar, el redoble no puede quedar sonando.
   useEffect(() => {
     return () => liveRef.current.sound.stopSpin();
   }, []);
 
-  const isDark = phase !== 'ready';
+  const onStage = phase !== 'ready';
+  const showLargeLogo = phase === 'countdown' || phase === 'spinning';
 
   return (
     <div
       ref={stageRef}
-      /* El color de texto cambia de golpe, sin transicion: animarlo dejaba la
-         cuenta regresiva en gris oscuro sobre el gradiente durante casi un
-         segundo, justo cuando la pantalla se esta compartiendo por Zoom. */
-      className={`relative flex min-h-dvh flex-col overflow-hidden ${
-        isDark ? 'adipa-gradient text-white' : 'bg-brand-surface-soft text-fg-default'
-      }`}
+      /* Fondo azul de marca en todas las fases, incluida la antesala: la pantalla
+         ya esta compartida por Zoom antes de que empiece la cuenta regresiva.
+         El color de texto cambia de golpe, sin transicion: animarlo dejaba la
+         cuenta regresiva en gris oscuro durante casi un segundo. */
+      className="adipa-stage-blue relative flex min-h-dvh flex-col overflow-hidden text-white"
     >
-      {/* Barra superior. Durante la funcion se atenua para no robar atencion. */}
+      {/* Durante la funcion el orden se invierte: el logo pasa a la esquina superior
+          derecha y los controles se van a la izquierda, atenuados. Asi la marca ocupa
+          el lugar de mayor peso visual justo cuando todos estan mirando. */}
       <header
-        className={`relative z-20 flex items-center gap-3 px-6 py-4 transition-opacity duration-500 ${
-          phase === 'countdown' || phase === 'spinning' ? 'opacity-25' : 'opacity-100'
+        className={`relative z-20 flex items-start gap-3 px-6 py-5 ${
+          showLargeLogo ? 'flex-row-reverse' : ''
         }`}
       >
-        {phase !== 'countdown' && phase !== 'spinning' && (
-          <Link
-            href={`/operador/${meetingId}`}
-            className={`rounded-adipa-control px-3 py-1.5 text-[13px] font-semibold transition ${
-              isDark ? 'text-white/80 hover:bg-white/10' : 'text-fg-muted hover:bg-white'
-            }`}
-          >
-            ← Volver
-          </Link>
-        )}
+        <div className="transition-all duration-500">
+          <AdipaLogo mode="white" height={showLargeLogo ? 56 : 32} />
+        </div>
 
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => sound.setMuted(!sound.muted)}
-            aria-label={sound.muted ? t('unmuteSound') : t('muteSound')}
-            className={`rounded-adipa-control px-3 py-1.5 text-[13px] font-semibold transition ${
-              isDark ? 'text-white/80 hover:bg-white/10' : 'text-fg-muted hover:bg-white'
+        <div className={`flex items-center gap-2 ${showLargeLogo ? 'mr-auto' : 'ml-auto'}`}>
+          {!onStage && (
+            <Link
+              href={`/operador/${meetingId}`}
+              className="rounded-adipa-control px-3 py-1.5 text-[13px] font-semibold text-white/80 transition hover:bg-white/15"
+            >
+              ← Volver
+            </Link>
+          )}
+
+          {/* Control de audio: silenciar y regular el volumen del redoble. */}
+          <div
+            className={`flex items-center gap-2 rounded-adipa-control bg-white/15 px-3 py-1.5 ring-1 ring-white/25 transition-opacity duration-500 ${
+              showLargeLogo ? 'opacity-40 hover:opacity-100' : 'opacity-100'
             }`}
           >
-            {sound.muted ? '🔇' : '🔊'}
-          </button>
+            <button
+              type="button"
+              onClick={() => sound.setMuted(!sound.muted)}
+              aria-label={sound.muted ? t('unmuteSound') : t('muteSound')}
+              className="text-[15px] leading-none"
+            >
+              {sound.muted ? '🔇' : '🔊'}
+            </button>
+
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={Math.round(sound.volume * 100)}
+              onChange={(e) => {
+                sound.setVolume(Number(e.target.value) / 100);
+                if (sound.muted) sound.setMuted(false);
+              }}
+              aria-label={t('volume')}
+              title={`${t('volume')}: ${Math.round(sound.volume * 100)}%`}
+              className="adipa-volume h-1 w-24 cursor-pointer appearance-none rounded-full bg-white/30"
+            />
+
+            <span className="w-8 text-right text-[11px] font-semibold tabular-nums text-white/80">
+              {sound.muted ? '—' : `${Math.round(sound.volume * 100)}%`}
+            </span>
+          </div>
 
           <button
             type="button"
             onClick={toggleFullscreen}
-            className={`rounded-adipa-control px-3 py-1.5 text-[13px] font-semibold transition ${
-              isDark ? 'text-white/80 hover:bg-white/10' : 'text-fg-muted hover:bg-white'
+            className={`rounded-adipa-control px-3 py-1.5 text-[13px] font-semibold text-white/80 transition hover:bg-white/15 ${
+              showLargeLogo ? 'opacity-40 hover:opacity-100' : 'opacity-100'
             }`}
           >
             {isFullscreen ? t('exitFullscreen') : t('fullscreen')}
@@ -202,31 +229,26 @@ export function DrawStage({
       </header>
 
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-16 text-center">
-        <p
-          className={`mb-2 text-[11px] font-bold uppercase tracking-[0.2em] ${
-            isDark ? 'text-white/70' : 'text-fg-subtle'
-          }`}
-        >
-          {topic}
-        </p>
-
         {phase === 'ready' && (
           <Ready
-            availableCount={availableCount}
-            requestedWinners={requestedWinners}
+            topic={topic}
+            requestedWinners={Math.min(requestedWinners, availableCount)}
             countdownSeconds={countdownSeconds}
             onStart={start}
             labels={{
               run: t('run'),
-              poolSize: t('poolSize', { count: availableCount }),
-              countdown: `${countdownSeconds} ${t('seconds')}`,
               winners: t('winners'),
+              countdown: t('countdown'),
+              seconds: t('seconds'),
             }}
           />
         )}
 
         {phase === 'countdown' && (
           <div aria-live="polite">
+            <p className="mb-4 text-[clamp(1.5rem,4vw,3rem)] font-bold leading-tight tracking-tight text-white">
+              {topic}
+            </p>
             <p className="adipa-countdown text-[clamp(8rem,26vw,20rem)]">{remaining}</p>
             <p className="mt-2 text-[15px] font-medium uppercase tracking-[0.2em] text-white/70">
               {t('seconds')}
@@ -236,7 +258,10 @@ export function DrawStage({
 
         {phase === 'spinning' && (
           <div className="w-full max-w-4xl">
-            <div className="mx-auto flex h-40 items-center justify-center overflow-hidden rounded-adipa-card bg-white/10 px-8 ring-1 ring-white/20">
+            <p className="mb-6 text-[clamp(1.5rem,4vw,3rem)] font-bold leading-tight tracking-tight text-white">
+              {topic}
+            </p>
+            <div className="mx-auto flex h-40 items-center justify-center overflow-hidden rounded-adipa-card bg-white/15 px-8 ring-1 ring-white/25">
               <p
                 key={reelName}
                 className="adipa-reel-item truncate text-[clamp(1.75rem,6vw,4rem)] font-bold tracking-tight"
@@ -244,16 +269,13 @@ export function DrawStage({
                 {reelName}
               </p>
             </div>
-            <p className="mt-6 text-[15px] font-medium uppercase tracking-[0.2em] text-white/70">
-              {t('poolSize', { count: availableCount })}
-            </p>
           </div>
         )}
 
-        {phase === 'winner' && <WinnerReveal winners={winners} />}
+        {phase === 'winner' && <WinnerReveal winners={winners} topic={topic} />}
 
         {phase === 'error' && (
-          <div className="max-w-lg rounded-adipa-card bg-white/10 px-8 py-10 ring-1 ring-white/20">
+          <div className="max-w-lg rounded-adipa-card bg-white/15 px-8 py-10 ring-1 ring-white/25">
             <p className="text-[17px] font-semibold">
               {error === 'EMPTY_POOL' ? t('notEnoughParticipants') : 'No se pudo realizar el sorteo.'}
             </p>
@@ -285,44 +307,52 @@ export function DrawStage({
   );
 }
 
+/**
+ * Antesala del sorteo.
+ *
+ * Deliberadamente NO muestra cuanta gente entra al sorteo: la pantalla ya esta
+ * compartida con los asistentes, y ese numero no les aporta nada. Lo que importa
+ * en ese momento es de que seminario se trata, cuantos ganadores habra y cuanto
+ * falta. El conteo del universo queda en la consola del operador.
+ */
 function Ready({
-  availableCount,
+  topic,
   requestedWinners,
   countdownSeconds,
   onStart,
   labels,
 }: {
-  availableCount: number;
+  topic: string;
   requestedWinners: number;
   countdownSeconds: number;
   onStart: () => void;
-  labels: { run: string; poolSize: string; countdown: string; winners: string };
+  labels: { run: string; winners: string; countdown: string; seconds: string };
 }) {
   return (
-    <div className="w-full max-w-lg">
-      <dl className="mb-10 grid grid-cols-3 gap-6 text-left">
+    <div className="w-full max-w-4xl">
+      <h1 className="text-[clamp(2rem,6vw,4.5rem)] font-bold leading-tight tracking-tight text-white">
+        {topic}
+      </h1>
+
+      <dl className="mx-auto mt-12 flex max-w-lg items-start justify-center gap-12">
         <div>
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-subtle">
-            Participantes
-          </dt>
-          <dd className="mt-1 text-[32px] font-bold tabular-nums text-brand-primary">
-            {availableCount}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-subtle">
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
             {labels.winners}
           </dt>
-          <dd className="mt-1 text-[32px] font-bold tabular-nums text-fg-default">
-            {Math.min(requestedWinners, availableCount)}
+          <dd className="mt-1 text-[44px] font-bold leading-none tabular-nums text-white">
+            {requestedWinners}
           </dd>
         </div>
+
+        <div aria-hidden className="h-14 w-px bg-white/30" />
+
         <div>
-          <dt className="text-[11px] font-semibold uppercase tracking-[0.05em] text-fg-subtle">
-            Cuenta regresiva
+          <dt className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">
+            {labels.countdown}
           </dt>
-          <dd className="mt-1 text-[32px] font-bold tabular-nums text-fg-default">
-            {countdownSeconds}s
+          <dd className="mt-1 text-[44px] font-bold leading-none tabular-nums text-white">
+            {countdownSeconds}
+            <span className="ml-1 text-[20px] font-semibold">s</span>
           </dd>
         </div>
       </dl>
@@ -330,26 +360,32 @@ function Ready({
       <button
         type="button"
         onClick={onStart}
-        className="adipa-gradient w-full rounded-adipa-control px-8 py-5 text-[18px] font-bold text-white transition hover:opacity-90"
+        className="mt-14 rounded-adipa-control bg-white px-12 py-5 text-[18px] font-bold text-brand-primary transition hover:opacity-90"
       >
         {labels.run}
       </button>
-
-      <p className="mt-4 text-[13px] text-fg-subtle">
-        Activa pantalla completa antes de comenzar si vas a compartir pantalla.
-      </p>
     </div>
   );
 }
 
-function WinnerReveal({ winners }: { winners: WinnerDto[] }) {
+function WinnerReveal({ winners, topic }: { winners: WinnerDto[]; topic: string }) {
   const tw = useTranslations('winner');
   const single = winners.length === 1;
 
+  // El titular y el nombre del seminario comparten escala: la marca del seminario
+  // pesa lo mismo que el anuncio.
+  const headlineSize = 'text-[clamp(1rem,2.5vw,1.5rem)]';
+
   return (
     <div className="adipa-winner-in w-full max-w-5xl" aria-live="polite">
-      <p className="mb-6 text-[clamp(1rem,2.5vw,1.5rem)] font-bold uppercase tracking-[0.2em] text-white/90">
+      <p
+        className={`mb-2 font-bold uppercase tracking-[0.2em] text-white/90 ${headlineSize}`}
+      >
         {single ? tw('single') : tw('plural')}
+      </p>
+
+      <p className={`mb-8 font-bold uppercase tracking-[0.2em] text-white ${headlineSize}`}>
+        {topic}
       </p>
 
       {single ? (
@@ -371,9 +407,14 @@ function WinnerReveal({ winners }: { winners: WinnerDto[] }) {
         </ol>
       )}
 
-      <p className="mt-8 text-[clamp(1rem,2.5vw,1.5rem)] font-semibold uppercase tracking-[0.2em] text-white/90">
+      <p className={`mt-8 font-semibold uppercase tracking-[0.2em] text-white/90 ${headlineSize}`}>
         {tw('congrats')}
       </p>
+
+      {/* La marca cierra el momento de mayor atencion de todo el seminario. */}
+      <div className="mt-10 flex justify-center">
+        <AdipaLogo mode="white" height={64} />
+      </div>
     </div>
   );
 }
@@ -382,13 +423,15 @@ function WinnerReveal({ winners }: { winners: WinnerDto[] }) {
 function Confetti() {
   const pieces = useMemo(
     () =>
-      Array.from({ length: 60 }, (_, i) => ({
+      Array.from({ length: 180 }, (_, i) => ({
         id: i,
         left: Math.random() * 100,
-        delay: Math.random() * 1.2,
-        duration: 2.6 + Math.random() * 2.2,
-        size: 6 + Math.random() * 8,
-        color: ['#FFC728', '#FF017C', '#2CB7FF', '#FFFFFF', '#DFD5FF'][i % 5],
+        delay: Math.random() * 2.2,
+        duration: 2.4 + Math.random() * 2.6,
+        size: 6 + Math.random() * 10,
+        // Los rectangulos alargados y los cuadrados mezclados dan sensacion de volumen.
+        ratio: Math.random() > 0.5 ? 0.4 : 1,
+        color: ['#FFC728', '#FF017C', '#FFFFFF', '#DFD5FF', '#704EFD', '#CBE8FF'][i % 6],
       })),
     [],
   );
@@ -402,7 +445,7 @@ function Confetti() {
           style={{
             left: `${p.left}%`,
             width: p.size,
-            height: p.size * 0.5,
+            height: p.size * p.ratio,
             backgroundColor: p.color,
             animationDelay: `${p.delay}s`,
             animationDuration: `${p.duration}s`,

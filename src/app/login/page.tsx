@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { isDevAuthEnabled } from '@/auth';
 import { getOptionalSession } from '@/server/authz';
 import { LoginForm } from './LoginForm';
+import { AdipaLogo } from '@/components/AdipaLogo';
 
 export default async function LoginPage({
   searchParams,
@@ -29,7 +30,7 @@ export default async function LoginPage({
           className="pointer-events-none absolute -bottom-32 -left-16 size-80 rounded-full bg-white/10"
         />
 
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/80">Adipa</p>
+        <AdipaLogo mode="white" height={34} className="relative" />
 
         <div className="relative max-w-md space-y-4">
           <h1 className="text-4xl font-bold leading-tight tracking-tight">Sorteos en vivo</h1>

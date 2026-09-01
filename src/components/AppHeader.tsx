@@ -4,6 +4,7 @@ import { getLocale } from 'next-intl/server';
 import { LOCALES, LOCALE_LABELS, type Locale } from '@/i18n/config';
 import { setLocale, setPreviewRole, signOutAction } from '@/server/actions/session';
 import { isAuthBypassEnabled } from '@/lib/auth/bypass';
+import { AdipaLogo } from '@/components/AdipaLogo';
 import type { Role } from '@/lib/auth/roles';
 
 interface Props {
@@ -54,9 +55,10 @@ export async function AppHeader({ userName, userEmail, role, context }: Props) {
       <div className="mx-auto flex h-14 max-w-350 items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           href={role === 'ADMIN' ? '/admin' : '/operador'}
-          className="text-[15px] font-bold tracking-tight text-brand-primary"
+          className="shrink-0"
+          aria-label="Adipa"
         >
-          Adipa
+          <AdipaLogo height={26} />
         </Link>
 
         {context && (

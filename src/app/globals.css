@@ -198,6 +198,44 @@ body {
   }
 }
 
+
+/* ==========================================================================
+   Escenario del sorteo
+   ========================================================================== */
+
+/*
+  Fondo azul de marca para la pantalla que se comparte por Zoom.
+
+  NOTA DE CONTRASTE: el cyan de marca #2CB7FF a secas da 2,25:1 contra texto
+  blanco, por debajo del minimo de 3:1 que exige WCAG incluso para texto grande,
+  y se vuelve ilegible al comprimirse en un video de Zoom. Por eso el degradado
+  arranca en #0272AA (azul oficial de la Escuela Infantojuvenil): la zona central,
+  donde cae el texto, queda en torno a 3,3:1 y el conjunto se sigue leyendo como
+  el azul de ADIPA.
+*/
+.adipa-stage-blue {
+  background-image: linear-gradient(135deg, #0272aa 0%, #1795d4 55%, #2cb7ff 100%);
+}
+
+/* Regulador de volumen del redoble. */
+.adipa-volume::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.adipa-volume::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 9999px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
 /* ==========================================================================
    Accesibilidad
    ========================================================================== */

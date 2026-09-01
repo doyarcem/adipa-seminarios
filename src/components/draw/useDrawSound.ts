@@ -10,23 +10,40 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
  *    sorteo SIEMPRE empieza con un clic del operador, ese gesto habilita el audio.
  *    Si aun asi falla, se ignora en silencio: el sonido nunca es obligatorio.
  *  - El resultado jamas se comunica solo por audio; el sonido acompana, no informa.
- *  - Respeta el volumen del dispositivo y se puede silenciar.
+ *  - Respeta el volumen del dispositivo, se puede regular y se puede silenciar.
  */
+
+const VOLUME_STORAGE_KEY = 'adipa-draw-volume';
+const DEFAULT_VOLUME = 0.55;
+
+/** El redoble suena en bucle y llega a cansar: se atenua respecto de la revelacion. */
+const SPIN_GAIN = 0.8;
+
 export function useDrawSound() {
   const spinRef = useRef<HTMLAudioElement | null>(null);
   const winnerRef = useRef<HTMLAudioElement | null>(null);
+
   const [muted, setMuted] = useState(false);
+  const [volume, setVolumeState] = useState(DEFAULT_VOLUME);
 
   useEffect(() => {
     const spin = new Audio('/sounds/spin.wav');
     spin.loop = true;
-    spin.volume = 0.45;
 
     const winner = new Audio('/sounds/winner.wav');
-    winner.volume = 0.7;
 
     spinRef.current = spin;
     winnerRef.current = winner;
+
+    // El operador suele usar el mismo equipo en cada seminario: se recuerda el
+    // volumen que dejo configurado la vez anterior.
+    try {
+      const stored = window.localStorage.getItem(VOLUME_STORAGE_KEY);
+      const parsed = stored === null ? Number.NaN : Number(stored);
+      if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 1) setVolumeState(parsed);
+    } catch {
+      // Ventana privada o almacenamiento bloqueado: se usa el valor por defecto.
+    }
 
     return () => {
       spin.pause();
@@ -36,10 +53,27 @@ export function useDrawSound() {
     };
   }, []);
 
+  // El volumen se aplica en vivo: mover el regulador durante el redoble se oye al instante.
   useEffect(() => {
-    if (spinRef.current) spinRef.current.muted = muted;
-    if (winnerRef.current) winnerRef.current.muted = muted;
-  }, [muted]);
+    if (spinRef.current) {
+      spinRef.current.volume = volume * SPIN_GAIN;
+      spinRef.current.muted = muted;
+    }
+    if (winnerRef.current) {
+      winnerRef.current.volume = volume;
+      winnerRef.current.muted = muted;
+    }
+  }, [volume, muted]);
+
+  const setVolume = useCallback((next: number) => {
+    const clamped = Math.max(0, Math.min(1, next));
+    setVolumeState(clamped);
+    try {
+      window.localStorage.setItem(VOLUME_STORAGE_KEY, String(clamped));
+    } catch {
+      // Sin almacenamiento, el volumen simplemente no se recuerda.
+    }
+  }, []);
 
   const startSpin = useCallback(() => {
     // catch() vacio a proposito: si el navegador bloquea el audio, el sorteo sigue.
@@ -59,12 +93,12 @@ export function useDrawSound() {
 
   /**
    * Se memoriza el objeto devuelto porque la pantalla de sorteo lo usa como
-   * dependencia de un efecto. Sin esto, cada render (la ruleta hace uno cada
-   * 80 ms) devolveria un objeto nuevo, el efecto se reiniciaria en bucle y el
-   * temporizador que detiene la animacion no llegaria a dispararse nunca.
+   * dependencia de un efecto. Sin esto, cada render devolveria un objeto nuevo,
+   * el efecto se reiniciaria en bucle y el temporizador que detiene la animacion
+   * no llegaria a dispararse nunca.
    */
   return useMemo(
-    () => ({ muted, setMuted, startSpin, stopSpin, playWinner }),
-    [muted, startSpin, stopSpin, playWinner],
+    () => ({ muted, setMuted, volume, setVolume, startSpin, stopSpin, playWinner }),
+    [muted, volume, setVolume, startSpin, stopSpin, playWinner],
   );
 }

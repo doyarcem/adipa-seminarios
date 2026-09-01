@@ -128,7 +128,8 @@
     "notEnoughParticipants": "There are no selected users available to draw from.",
     "fewerThanRequested": "{actual} of the {requested} requested will be selected, because that is how many are available.",
     "muteSound": "Mute",
-    "unmuteSound": "Unmute"
+    "unmuteSound": "Unmute",
+    "volume": "Volume"
   },
   "winner": {
     "single": "We have a winner!",
