@@ -33,7 +33,7 @@ const PREVIEW_IDENTITIES: Record<Role, PreviewIdentity> = {
   OPERATOR: {
     userId: 'preview-operator',
     email: 'sala1.virtualys@gmail.com',
-    name: 'Operador (vista previa)',
+    name: 'Monitor (vista previa)',
     role: 'OPERATOR',
   },
   ADMIN: {

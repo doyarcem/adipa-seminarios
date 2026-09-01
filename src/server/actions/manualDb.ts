@@ -99,7 +99,7 @@ export async function importManualDbAction(
       },
     });
 
-    revalidatePath(`/operador/${meetingId}`);
+    revalidatePath(`/monitor/${meetingId}`);
 
     return {
       ok: true,

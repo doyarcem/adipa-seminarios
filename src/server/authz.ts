@@ -118,7 +118,7 @@ export async function requirePageAccess(permission: Permission): Promise<AuthCon
   if (!session) redirect('/login');
 
   if (!hasPermission(session.role, permission)) {
-    redirect(session.role === 'ADMIN' ? '/admin' : '/operador');
+    redirect(session.role === 'ADMIN' ? '/admin' : '/monitor');
   }
 
   return session;
@@ -128,7 +128,7 @@ export async function requirePageAccess(permission: Permission): Promise<AuthCon
 export async function requirePageRole(role: Role): Promise<AuthContext> {
   const session = await getOptionalSession();
   if (!session) redirect('/login');
-  if (session.role !== role) redirect(session.role === 'ADMIN' ? '/admin' : '/operador');
+  if (session.role !== role) redirect(session.role === 'ADMIN' ? '/admin' : '/monitor');
 
   return session;
 }

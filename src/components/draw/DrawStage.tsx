@@ -153,11 +153,13 @@ export function DrawStage({
   return (
     <div
       ref={stageRef}
-      /* Fondo azul de marca en todas las fases, incluida la antesala: la pantalla
-         ya esta compartida por Zoom antes de que empiece la cuenta regresiva.
-         El color de texto cambia de golpe, sin transicion: animarlo dejaba la
-         cuenta regresiva en gris oscuro durante casi un segundo. */
-      className="adipa-stage-blue relative flex min-h-dvh flex-col overflow-hidden text-white"
+      /* Azul de marca durante la antesala, la cuenta regresiva y la ruleta: la
+         pantalla ya esta compartida por Zoom antes de que empiece el sorteo.
+         La revelacion del ganador conserva el gradiente morado-cyan original,
+         que es el momento donde la marca se muestra en su version plena. */
+      className={`relative flex min-h-dvh flex-col overflow-hidden text-white ${
+        phase === 'winner' ? 'adipa-gradient' : 'adipa-stage-blue'
+      }`}
     >
       {/* Durante la funcion el orden se invierte: el logo pasa a la esquina superior
           derecha y los controles se van a la izquierda, atenuados. Asi la marca ocupa
@@ -174,7 +176,7 @@ export function DrawStage({
         <div className={`flex items-center gap-2 ${showLargeLogo ? 'mr-auto' : 'ml-auto'}`}>
           {!onStage && (
             <Link
-              href={`/operador/${meetingId}`}
+              href={`/monitor/${meetingId}`}
               className="rounded-adipa-control px-3 py-1.5 text-[13px] font-semibold text-white/80 transition hover:bg-white/15"
             >
               ← Volver
@@ -281,7 +283,7 @@ export function DrawStage({
             </p>
             <button
               type="button"
-              onClick={() => router.push(`/operador/${meetingId}`)}
+              onClick={() => router.push(`/monitor/${meetingId}`)}
               className="mt-6 rounded-adipa-control bg-white px-5 py-2.5 text-[14px] font-semibold text-brand-primary"
             >
               Volver

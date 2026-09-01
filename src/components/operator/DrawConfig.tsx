@@ -37,7 +37,7 @@ export function DrawConfig({ meetingId, availableCount, hasSnapshot, drawsRun }:
       winners: String(winners),
       countdown: String(countdown),
     });
-    router.push(`/operador/${meetingId}/sorteo?${params}`);
+    router.push(`/monitor/${meetingId}/sorteo?${params}`);
   };
 
   return (

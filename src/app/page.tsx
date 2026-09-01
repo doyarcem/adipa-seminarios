@@ -5,5 +5,5 @@ import { getOptionalSession } from '@/server/authz';
 export default async function HomePage() {
   const session = await getOptionalSession();
   if (!session) redirect('/login');
-  redirect(session.role === 'ADMIN' ? '/admin' : '/operador');
+  redirect(session.role === 'ADMIN' ? '/admin' : '/monitor');
 }

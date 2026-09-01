@@ -11,7 +11,7 @@
     "retry": "Reintentar",
     "logout": "Salir",
     "admin": "Administrador",
-    "operator": "Operador",
+    "operator": "Monitor",
     "yes": "Sí",
     "no": "No",
     "all": "Todos",
@@ -26,13 +26,14 @@
   "auth": {
     "signInTitle": "Ingresa a Sorteos Adipa",
     "signInSubtitle": "Realiza sorteos en vivo durante tus seminarios y reuniones.",
-    "signInWithGoogle": "Continuar con Google",
+    "signInWithGoogle": "Ingresar con una cuenta de Google",
     "email": "Correo electrónico",
     "password": "Contraseña",
     "signIn": "Iniciar sesión",
     "invalidCredentials": "El correo o la contraseña no son correctos.",
     "accountInactive": "Tu cuenta está desactivada. Contacta a un administrador.",
-    "unauthorized": "No tienes permisos para acceder a esta sección."
+    "unauthorized": "No tienes permisos para acceder a esta sección.",
+    "or": "o"
   },
   "meetings": {
     "title": "Reuniones activas",
@@ -201,7 +202,7 @@
     "connectedAccounts": "Cuentas Zoom conectadas",
     "drawsRun": "Sorteos realizados",
     "winners": "Ganadores",
-    "operators": "Operadores",
+    "operators": "Monitores",
     "recentActivity": "Actividad reciente",
     "zoomAccounts": {
       "title": "Cuentas Zoom",
@@ -213,7 +214,7 @@
       "unlink": "Desvincular cuenta",
       "reauth": "Volver a autenticar",
       "viewState": "Ver estado",
-      "visibleToOperators": "Visible para operadores",
+      "visibleToOperators": "Visible para monitores",
       "knownCoHosts": "Coanfitriones conocidos",
       "knownCoHostsHint": "Correos que deben excluirse siempre. Compensa que la API de Zoom no informe los coanfitriones.",
       "unlinkConfirmTitle": "¿Desvincular esta cuenta de Zoom?",
@@ -231,13 +232,13 @@
       "email": "Correo",
       "role": "Rol",
       "active": "Activo",
-      "invite": "Invitar operador",
+      "invite": "Invitar monitor",
       "domainLocked": "Rol asignado automáticamente por el dominio del correo."
     },
     "history": {
       "title": "Historial de sorteos",
       "meeting": "Reunión",
-      "operator": "Operador",
+      "operator": "Monitor",
       "participants": "Participantes",
       "requested": "Ganadores solicitados",
       "actual": "Ganadores",

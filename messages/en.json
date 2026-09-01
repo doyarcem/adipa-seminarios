@@ -11,7 +11,7 @@
     "retry": "Try again",
     "logout": "Sign out",
     "admin": "Administrator",
-    "operator": "Operator",
+    "operator": "Monitor",
     "yes": "Yes",
     "no": "No",
     "all": "All",
@@ -26,13 +26,14 @@
   "auth": {
     "signInTitle": "Sign in to Adipa Draws",
     "signInSubtitle": "Run live draws during your seminars and meetings.",
-    "signInWithGoogle": "Continue with Google",
+    "signInWithGoogle": "Sign in with a Google account",
     "email": "Email address",
     "password": "Password",
     "signIn": "Sign in",
     "invalidCredentials": "That email or password is not correct.",
     "accountInactive": "Your account is deactivated. Contact an administrator.",
-    "unauthorized": "You do not have permission to access this section."
+    "unauthorized": "You do not have permission to access this section.",
+    "or": "or"
   },
   "meetings": {
     "title": "Active meetings",
@@ -201,7 +202,7 @@
     "connectedAccounts": "Connected Zoom accounts",
     "drawsRun": "Draws run",
     "winners": "Winners",
-    "operators": "Operators",
+    "operators": "Monitors",
     "recentActivity": "Recent activity",
     "zoomAccounts": {
       "title": "Zoom accounts",
@@ -213,11 +214,11 @@
       "unlink": "Unlink account",
       "reauth": "Re-authenticate",
       "viewState": "View state",
-      "visibleToOperators": "Visible to operators",
+      "visibleToOperators": "Visible to monitors",
       "knownCoHosts": "Known co-hosts",
       "knownCoHostsHint": "Emails that must always be excluded. Compensates for the Zoom API not reporting co-hosts.",
       "unlinkConfirmTitle": "Unlink this Zoom account?",
-      "unlinkConfirmBody": "Associated draws and history are kept. The account will stop appearing for operators.",
+      "unlinkConfirmBody": "Associated draws and history are kept. The account will stop appearing for monitors.",
       "states": {
         "CONNECTED": "Connected",
         "NEEDS_REAUTH": "Needs re-authentication",
@@ -231,13 +232,13 @@
       "email": "Email",
       "role": "Role",
       "active": "Active",
-      "invite": "Invite operator",
+      "invite": "Invite monitor",
       "domainLocked": "Role assigned automatically by the email domain."
     },
     "history": {
       "title": "Draw history",
       "meeting": "Meeting",
-      "operator": "Operator",
+      "operator": "Monitor",
       "participants": "Participants",
       "requested": "Winners requested",
       "actual": "Winners",

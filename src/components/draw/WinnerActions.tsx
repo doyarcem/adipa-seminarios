@@ -188,7 +188,7 @@ export function WinnerActions({ meetingId, drawId, winners, onChanged }: Props) 
             ·
           </span>
           <Link
-            href={`/operador/resultado/${drawId}`}
+            href={`/monitor/resultado/${drawId}`}
             className="font-semibold text-white/90 underline-offset-4 hover:underline"
           >
             Ver resultado completo

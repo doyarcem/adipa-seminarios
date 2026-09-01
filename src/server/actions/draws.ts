@@ -52,7 +52,7 @@ export async function runDrawAction(
       actor: { userId: ctx.userId, email: ctx.email, name: ctx.name },
     });
 
-    revalidatePath(`/operador/${meetingId}`);
+    revalidatePath(`/monitor/${meetingId}`);
 
     return {
       ok: true,
@@ -84,7 +84,7 @@ export async function alAguaAction(
 
     const store = getStore();
     const draw = await store.getDraw(replacement.drawId);
-    revalidatePath(`/operador/${meetingId}`);
+    revalidatePath(`/monitor/${meetingId}`);
 
     return {
       ok: true,
@@ -111,7 +111,7 @@ export async function validateWinnerAction(
       name: ctx.name,
     });
 
-    revalidatePath(`/operador/${meetingId}`);
+    revalidatePath(`/monitor/${meetingId}`);
 
     return {
       ok: true,

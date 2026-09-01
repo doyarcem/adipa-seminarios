@@ -59,7 +59,7 @@ export function DrawHistory({ draws }: { draws: DrawSummary[] }) {
             </ul>
 
             <Link
-              href={`/operador/resultado/${draw.id}`}
+              href={`/monitor/resultado/${draw.id}`}
               className="mt-2 inline-block text-[12px] font-semibold text-brand-primary hover:underline"
             >
               Ver resultado →

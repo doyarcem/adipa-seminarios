@@ -75,20 +75,26 @@ function buildProviders(): Provider[] {
         id: 'dev',
         name: 'Modo prueba',
         credentials: {
-          email: { label: 'Correo electrónico', type: 'email' },
-          name: { label: 'Nombre', type: 'text' },
+          email: { label: 'Correo', type: 'email' },
+          password: { label: 'Contraseña', type: 'password' },
         },
         /**
-         * No hay contrasena que verificar: este proveedor existe unicamente para
-         * poder recorrer la aplicacion mientras faltan las credenciales del
-         * Marketplace. Lo unico que valida es que el correo tenga forma de correo.
+         * MODO PRUEBA: la contrasena NO se verifica.
+         *
+         * Este proveedor existe solo para poder recorrer la aplicacion mientras no
+         * hay credenciales de Zoom ni de Google. Acepta cualquier combinacion de
+         * correo y contrasena; lo unico que comprueba es que el correo tenga forma
+         * de correo, porque de ahi se deriva el rol.
+         *
+         * No hay hash, no hay comparacion y no hay usuario almacenado: cuando
+         * exista autenticacion real, este proveedor se elimina entero en vez de
+         * "endurecerse", para que no quede ninguna via de acceso sin contrasena.
          */
         authorize: async (credentials) => {
           const email = String(credentials?.email ?? '').trim().toLowerCase();
           if (!extractDomain(email)) return null;
 
-          const name = String(credentials?.name ?? '').trim();
-          return { id: `dev:${email}`, email, name: name || email.split('@')[0] };
+          return { id: `dev:${email}`, email, name: email.split('@')[0] };
         },
       }),
     );

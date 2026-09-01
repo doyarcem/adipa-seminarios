@@ -11,7 +11,7 @@ export default async function LoginPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const session = await getOptionalSession();
-  if (session) redirect(session.role === 'ADMIN' ? '/admin' : '/operador');
+  if (session) redirect(session.role === 'ADMIN' ? '/admin' : '/monitor');
 
   const t = await getTranslations('auth');
   const { from } = await searchParams;
@@ -55,7 +55,7 @@ export default async function LoginPage({
           <LoginForm
             hasZoom={Boolean(process.env.ZOOM_CLIENT_ID && process.env.ZOOM_CLIENT_SECRET)}
             hasGoogle={Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET)}
-            devMode={isDevAuthEnabled()}
+            demoMode={isDevAuthEnabled()}
             callbackUrl={from ?? '/'}
           />
         </div>

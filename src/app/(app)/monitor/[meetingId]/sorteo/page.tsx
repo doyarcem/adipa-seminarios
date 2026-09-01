@@ -26,7 +26,7 @@ export default async function DrawPage({
   if (!meeting) notFound();
 
   const active = await store.getActiveSnapshot(meetingId);
-  if (!active) redirect(`/operador/${meetingId}`);
+  if (!active) redirect(`/monitor/${meetingId}`);
 
   // Mismo universo que usara el servidor al sortear (seccion 24).
   const previousWinners = new Set(await store.listPreviousWinnerNames(meetingId));

@@ -51,7 +51,7 @@ export async function selectMeeting(formData: FormData): Promise<void> {
     detail: { topic: meeting.topic, zoomAccountName: meeting.zoomAccountName },
   });
 
-  redirect(`/operador/${meeting.id}`);
+  redirect(`/monitor/${meeting.id}`);
 }
 
 /**
@@ -80,7 +80,7 @@ export async function extractParticipantsAction(meetingId: string): Promise<Acti
       actor: { userId: ctx.userId, email: ctx.email, name: ctx.name },
     });
 
-    revalidatePath(`/operador/${meetingId}`);
+    revalidatePath(`/monitor/${meetingId}`);
     return { ok: true };
   } catch (error) {
     if (error instanceof ZoomApiError) {
@@ -116,7 +116,7 @@ export async function setParticipantOverride(
       name: ctx.name,
     });
 
-    revalidatePath(`/operador/${meetingId}`);
+    revalidatePath(`/monitor/${meetingId}`);
     return { ok: true };
   } catch (error) {
     // Host y co-host no se pueden incluir a mano (seccion 16).

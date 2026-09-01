@@ -43,7 +43,7 @@ export default async function AdminPage() {
             <strong className="font-semibold text-fg-default">Vista en construcción.</strong> La
             vinculación de cuentas Zoom, la administración de usuarios, el historial global y la
             auditoría detallada están pendientes. Mientras tanto puedes operar desde{' '}
-            <Link href="/operador" className="font-semibold text-brand-primary hover:underline">
+            <Link href="/monitor" className="font-semibold text-brand-primary hover:underline">
               la vista de operador
             </Link>
             .

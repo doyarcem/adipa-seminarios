@@ -54,7 +54,7 @@ export async function AppHeader({ userName, userEmail, role, context }: Props) {
       <header className="sticky top-0 z-30 border-b border-border-subtle bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-350 items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link
-          href={role === 'ADMIN' ? '/admin' : '/operador'}
+          href={role === 'ADMIN' ? '/admin' : '/monitor'}
           className="shrink-0"
           aria-label="Adipa"
         >
