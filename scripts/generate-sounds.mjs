@@ -81,44 +81,51 @@ function applyEdgeFades(samples, fadeSeconds = 0.005) {
 // ─────────────────────────── redoble de tambores ───────────────────────────
 
 /**
- * Un golpe de caja: ruido filtrado con caida rapida (el parche y las bordonas)
- * mas un cuerpo tonal grave que le da peso.
+ * Un golpe de caja escrito con indice CIRCULAR.
+ *
+ * El modulo es lo que hace que el bucle sea imperceptible: un golpe que empieza
+ * cerca del final continua su cola al principio del buffer, asi que al repetirse
+ * el archivo no hay ni silencio ni corte en la union.
  */
 function renderStroke(target, startSample, random, amplitude) {
-  const length = seconds(0.035);
+  const length = seconds(0.16);
   let lowpass = 0;
   let highpass = 0;
   let previousNoise = 0;
 
   for (let i = 0; i < length; i++) {
-    const index = startSample + i;
-    if (index >= target.length) return;
+    const index = (startSample + i) % target.length;
 
     const t = i / SAMPLE_RATE;
-    const envelope = Math.exp(-t * 145);
+    // Caida mas lenta que antes: las colas de golpes sucesivos se solapan y el
+    // redoble se percibe sostenido en vez de como golpes sueltos.
+    const envelope = Math.exp(-t * 20);
 
     const noise = random() * 2 - 1;
 
-    // Paso-bajo: el cuerpo del parche.
     lowpass += (noise - lowpass) * 0.35;
-    // Paso-alto: el siseo metalico de las bordonas.
     highpass = 0.85 * (highpass + noise - previousNoise);
     previousNoise = noise;
 
-    // Tono grave con caida mas lenta: el aro de la caja resonando.
-    const body = Math.sin(2 * Math.PI * 185 * t) * Math.exp(-t * 70) * 0.35;
+    const body = Math.sin(2 * Math.PI * 185 * t) * Math.exp(-t * 30) * 0.35;
 
     target[index] += (lowpass * 0.5 + highpass * 0.55 + body) * envelope * amplitude;
   }
 }
 
 /**
- * Redoble de tambores, pensado para reproducirse en LOOP mientras dura la cuenta
- * regresiva (seccion 30). La cantidad de golpes es entera y el ultimo cierra justo
- * antes del final, de modo que el empalme del loop no se escucha.
+ * Redoble sostenido, en bucle, mientras dura la cuenta regresiva (seccion 30).
  *
- * El patron alterna manos con acento cada cuatro golpes, que es lo que hace que
- * suene a redoble militar y no a ruido continuo.
+ * Dos decisiones deliberadas:
+ *
+ *  1. SIN acentos periodicos. Un patron de acento cada cuatro golpes se percibe
+ *     como si el redoble se detuviera y volviera a arrancar. Aqui todos los
+ *     golpes pesan igual, con una variacion minima y aleatoria que solo evita
+ *     que suene a maquina.
+ *
+ *  2. SIN desvanecido en los bordes. Al reproducirse en bucle, un fundido de
+ *     entrada y salida produce un bache audible cada dos segundos. La costura
+ *     se resuelve con escritura circular, no bajando el volumen.
  */
 function renderSpin() {
   const duration = 2.0;
@@ -127,28 +134,41 @@ function renderSpin() {
   const random = makeRandom(20260831);
 
   // Velocidad del redoble. Mas alto suena a redoble cerrado ("buzz"), mas bajo
-  // deja oir cada golpe por separado y genera mas tension.
-  const strokesPerSecond = 20;
+  // deja oir cada golpe por separado.
+  const strokesPerSecond = 14;
   const strokeCount = Math.round(duration * strokesPerSecond);
   const interval = total / strokeCount;
 
   for (let i = 0; i < strokeCount; i++) {
-    // Acento cada cuatro golpes y alternancia suave entre manos.
-    const accent = i % 4 === 0 ? 1 : i % 2 === 0 ? 0.72 : 0.6;
-    // Micro-desplazamiento humano: un redoble perfectamente cuadriculado suena a maquina.
-    const jitter = (random() - 0.5) * interval * 0.12;
-    renderStroke(samples, Math.round(i * interval + jitter), random, accent);
+    // Variacion pequena y sin periodo: da naturalidad sin crear un pulso audible.
+    const amplitude = 0.85 + random() * 0.15;
+    const jitter = (random() - 0.5) * interval * 0.1;
+    renderStroke(samples, Math.round(i * interval + jitter), random, amplitude);
   }
 
-  // Siseo continuo de las bordonas, muy bajo, que rellena los huecos entre golpes.
+  /*
+   * Cama continua de bordonas. Se filtra dando DOS vueltas al buffer y quedandose
+   * con la segunda: asi el estado del filtro al final coincide con el del
+   * principio y el bucle no tiene salto.
+   */
+  const bed = new Float64Array(total);
   let sizzle = 0;
-  for (let i = 0; i < total; i++) {
-    const noise = random() * 2 - 1;
-    sizzle += (noise - sizzle) * 0.6;
-    samples[i] += sizzle * 0.025;
+
+  for (let vuelta = 0; vuelta < 2; vuelta++) {
+    // La misma semilla en ambas vueltas produce el mismo ruido; lo que se arrastra
+    // entre vueltas es el estado del filtro, que es justo lo que hace que el final
+    // del buffer empalme con su principio.
+    const bedRandom = makeRandom(13579);
+    for (let i = 0; i < total; i++) {
+      const noise = bedRandom() * 2 - 1;
+      sizzle += (noise - sizzle) * 0.6;
+      if (vuelta === 1) bed[i] = sizzle;
+    }
   }
 
-  return applyEdgeFades(normalize(Array.from(samples), 0.72), 0.004);
+  for (let i = 0; i < total; i++) samples[i] += bed[i] * 0.10;
+
+  return normalize(Array.from(samples), 0.72);
 }
 
 // ─────────────────────────── ganador ───────────────────────────

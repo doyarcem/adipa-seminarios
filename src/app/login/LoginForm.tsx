@@ -54,7 +54,10 @@ export function LoginForm({ hasZoom, hasGoogle, demoMode, callbackUrl }: Props) 
           <input
             id="email"
             name="email"
-            type="email"
+            /* En demostracion el campo es de texto libre: con type="email" el
+               propio navegador bloquea el envio si lo escrito no tiene forma de
+               correo, y entonces no basta con "poner cualquier dato". */
+            type={demoMode ? 'text' : 'email'}
             autoComplete="username"
             required
             value={email}
