@@ -1,7 +1,12 @@
 node_modules/
 .next/
-.env
-.env.local
+
+# Cualquier archivo de entorno queda fuera, salvo el ejemplo sin secretos.
+# El comodin cubre tambien copias sueltas como ".env.download" o ".env (2)",
+# que con los patrones exactos anteriores si se habrian podido subir por error.
+.env*
+!.env.example
+
 *.log
 /storage/
 tmp/
