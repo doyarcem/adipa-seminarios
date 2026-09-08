@@ -22,6 +22,8 @@ export interface LiveMeetingCard {
   /** id interno si esta reunion ya fue seleccionada alguna vez. */
   meetingRecordId: string | null;
   hasActiveSnapshot: boolean;
+  /** true si ya se ejecuto al menos un sorteo (completado) en esta reunion. */
+  hasCompletedDraw: boolean;
 }
 
 /**
@@ -50,6 +52,10 @@ export async function listActiveMeetings(): Promise<{
         for (const m of live) {
           const record = await store.findMeetingByUuid(account.id, m.uuid);
           const active = record ? await store.getActiveSnapshot(record.id) : null;
+          // "Sorteo realizado" refleja que ya se ejecuto un sorteo, no solo que se
+          // extrajeron participantes: se consulta el historial de sorteos completados.
+          const draws = record ? await store.listDraws(record.id) : [];
+          const hasCompletedDraw = draws.some((d) => d.draw.status === 'COMPLETED');
 
           meetings.push({
             zoomAccountId: account.id,
@@ -62,6 +68,7 @@ export async function listActiveMeetings(): Promise<{
             participantCount: m.participants ?? null,
             meetingRecordId: record?.id ?? null,
             hasActiveSnapshot: Boolean(active),
+            hasCompletedDraw,
           });
         }
       } catch (error) {

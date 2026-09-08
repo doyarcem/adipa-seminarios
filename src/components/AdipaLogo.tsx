@@ -40,8 +40,11 @@ interface Props {
 
 const FILES: Record<LogoVariant, Record<LogoMode, string>> = {
   logotype: {
-    'full-color': '/brand/logos/adipa-logotype-full-color.svg',
-    white: '/brand/logos/adipa-logotype-white.svg',
+    // Archivo oficial entregado por ADIPA (full-color, fondo transparente).
+    // Se usa el MISMO archivo para "white": sobre fondos de marca se presenta dentro
+    // de una caja blanca (ver render, DESIGN.md 6.3), sin recolorear el original.
+    'full-color': '/brand/logos/adipa-logotype-full-color.png',
+    white: '/brand/logos/adipa-logotype-full-color.png',
   },
   isotype: {
     'full-color': '/brand/logos/adipa-isotype-full-color.svg',
@@ -87,16 +90,35 @@ export function AdipaLogo({
     );
   }
 
-  return (
+  const img = (
     // eslint-disable-next-line @next/next/no-img-element -- necesita onError para el respaldo
     <img
       ref={imgRef}
       src={FILES[variant][mode]}
       alt="Adipa"
       height={height}
+      // Alto fijo y ancho automatico: la imagen nunca se deforma.
       style={{ height, width: 'auto' }}
       onError={() => setMissing(true)}
-      className={className}
+      className={mode === 'white' ? 'block' : className}
     />
   );
+
+  /**
+   * El archivo oficial es full-color con fondo transparente. Sobre los fondos de
+   * marca (morado/cyan/navy) las letras y el texto gris quedarian ilegibles, asi que
+   * se presenta dentro de una caja blanca, tal como exige DESIGN.md 6.3. Es un
+   * contenedor de estilo: el logo no se recolorea ni se modifica.
+   */
+  if (mode === 'white') {
+    return (
+      <span
+        className={`inline-flex w-fit items-center self-start rounded-adipa-control bg-white px-3 py-2 ${className}`}
+      >
+        {img}
+      </span>
+    );
+  }
+
+  return img;
 }

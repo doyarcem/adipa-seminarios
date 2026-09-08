@@ -26,7 +26,6 @@
   "auth": {
     "signInTitle": "Seminar draw application - ADIPA",
     "signInSubtitle": "Sign in with your account to get started.",
-    "signInWithGoogle": "Sign in with a Google account",
     "email": "Email address",
     "password": "Password",
     "signIn": "Sign in",
@@ -44,6 +43,7 @@
     "host": "Host",
     "startTime": "Start time",
     "participantCount": "Participants",
+    "drawCompleted": "Draw completed",
     "refresh": "Refresh meetings",
     "empty": "We could not find any active meetings in the linked Zoom accounts.",
     "emptyHint": "Make sure the meeting has already started and try again."

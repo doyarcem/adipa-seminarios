@@ -55,7 +55,6 @@ export default async function LoginPage({
 
           <LoginForm
             hasZoom={Boolean(process.env.ZOOM_CLIENT_ID && process.env.ZOOM_CLIENT_SECRET)}
-            hasGoogle={Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET)}
             demoMode={isDevAuthEnabled()}
             callbackUrl={from ?? '/'}
           />

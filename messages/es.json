@@ -26,7 +26,6 @@
   "auth": {
     "signInTitle": "Aplicación de sorteos para seminarios - ADIPA",
     "signInSubtitle": "Ingresa con tu cuenta para comenzar.",
-    "signInWithGoogle": "Ingresar con una cuenta de Google",
     "email": "Correo electrónico",
     "password": "Contraseña",
     "signIn": "Iniciar sesión",
@@ -44,6 +43,7 @@
     "host": "Anfitrión",
     "startTime": "Hora de inicio",
     "participantCount": "Participantes",
+    "drawCompleted": "Sorteo realizado",
     "refresh": "Actualizar reuniones",
     "empty": "No encontramos reuniones activas disponibles en las cuentas de Zoom vinculadas.",
     "emptyHint": "Verifica que la reunión ya haya comenzado y vuelve a intentar."

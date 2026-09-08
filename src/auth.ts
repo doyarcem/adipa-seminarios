@@ -19,6 +19,7 @@ import Google from 'next-auth/providers/google';
 import Zoom from 'next-auth/providers/zoom';
 import type { Provider } from 'next-auth/providers';
 import { canSignIn, resolveRole, type Role } from '@/lib/auth/roles';
+import { verifyDemoLogin } from '@/lib/auth/demoAccounts';
 
 declare module 'next-auth' {
   interface Session {
@@ -59,6 +60,12 @@ function buildProviders(): Provider[] {
     );
   }
 
+  // El boton "Ingresar con Google" se retiro de la interfaz (src/app/login/LoginForm.tsx).
+  // El provider se CONSERVA a proposito: mientras existan las dos cuentas que aun
+  // ingresan por Google, quitarlo las dejaria fuera. Solo se registra si hay
+  // credenciales configuradas; con AUTH_GOOGLE_ID/SECRET vacios no queda ninguna ruta
+  // Google activa. Para cerrarlo por completo: confirmar que esas cuentas migraron al
+  // login manual/Zoom y recien entonces eliminar este bloque y sus variables de entorno.
   if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
     providers.push(
       Google({
@@ -79,24 +86,20 @@ function buildProviders(): Provider[] {
           password: { label: 'Contraseña', type: 'password' },
         },
         /**
-         * MODO PRUEBA: la contrasena NO se verifica.
+         * MODO PRUEBA: solo entran las cuentas configuradas por entorno.
          *
-         * Este proveedor existe solo para poder recorrer la aplicacion mientras no
-         * hay credenciales de Zoom ni de Google. Acepta cualquier combinacion de
-         * correo y contrasena; lo unico que comprueba es que el correo tenga forma
-         * de correo, porque de ahi se deriva el rol.
-         *
-         * No hay hash, no hay comparacion y no hay usuario almacenado: cuando
-         * exista autenticacion real, este proveedor se elimina entero en vez de
-         * "endurecerse", para que no quede ninguna via de acceso sin contrasena.
+         * Las credenciales viven en `DEMO_LOGIN_ACCOUNTS` (solo servidor, sin prefijo
+         * NEXT_PUBLIC_): nunca estan en el codigo fuente ni llegan al navegador. La
+         * contrasena se compara aqui, en servidor, con tiempo constante. El rol se
+         * sigue derivando del dominio del correo en `resolveRole()`, asi que basta
+         * configurar un correo @adipa.cl para probar el rol administrador.
          */
         authorize: async (credentials) => {
           const email = String(credentials?.email ?? '').trim().toLowerCase();
-          // Basta con que haya escrito algo. No se exige un dominio valido: si se
-          // exigiera, un correo como "prueba@prueba" seria rechazado y el formulario
-          // dejaria de avanzar aunque el boton de Google si lo hiciera, que es
-          // justo la incoherencia que se quiere evitar en la demostracion.
-          if (email.length === 0) return null;
+          const password = String(credentials?.password ?? '');
+          if (!email || !password) return null;
+
+          if (!verifyDemoLogin(process.env.DEMO_LOGIN_ACCOUNTS, email, password)) return null;
 
           return { id: `dev:${email}`, email, name: email.split('@')[0] || email };
         },

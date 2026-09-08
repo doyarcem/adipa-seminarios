@@ -24,9 +24,9 @@ export async function MeetingCard({ meeting }: { meeting: LiveMeetingCard }) {
           {t('live')}
         </span>
 
-        {meeting.hasActiveSnapshot && (
+        {meeting.hasCompletedDraw && (
           <span className="ml-auto rounded-full bg-brand-surface-soft px-2.5 py-0.5 text-[11px] font-semibold text-brand-primary">
-            Snapshot activo
+            {t('drawCompleted')}
           </span>
         )}
       </div>
