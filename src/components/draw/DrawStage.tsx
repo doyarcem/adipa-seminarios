@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { runDrawAction, type WinnerDto } from '@/server/actions/draws';
+import { alAguaAction, runDrawAction, type DrawResultDto, type WinnerDto } from '@/server/actions/draws';
 import { AdipaLogo } from '@/components/AdipaLogo';
 import { useDrawSound } from './useDrawSound';
 import { WinnerActions } from './WinnerActions';
@@ -25,6 +25,9 @@ type Phase = 'ready' | 'countdown' | 'spinning' | 'winner' | 'error';
 const SPIN_MS = 1800;
 /** Cada cuanto cambia el nombre en la ruleta. */
 const REEL_TICK_MS = 80;
+
+/** Cuenta regresiva del reemplazo tras un "Al agua", mas corta que la inicial. */
+const AL_AGUA_COUNTDOWN_SECONDS = 3;
 
 /** Alto del logo, identico en todas las fases del sorteo. */
 const LOGO_HEIGHT = 64;
@@ -69,28 +72,54 @@ export function DrawStage({
   }, []);
 
   /**
-   * Arranca el sorteo.
+   * Pone en marcha la secuencia completa: cuenta regresiva, ruleta y revelacion.
    *
    * El servidor decide y persiste el resultado de INMEDIATO; la cuenta regresiva y
    * el redoble corren en paralelo. Asi la animacion nunca puede quedar sin desenlace
    * por un problema de red delante de la audiencia.
+   *
+   * La usan tanto el sorteo inicial como el reemplazo tras un "Al agua": el publico
+   * ve exactamente la misma puesta en escena en los dos casos.
    */
-  const start = useCallback(() => {
-    setError(null);
-    setPhase('countdown');
-    setRemaining(countdownSeconds);
-    sound.startSpin();
+  const runSequence = useCallback(
+    (seconds: number, decide: () => Promise<DrawResultDto>) => {
+      setError(null);
+      setRemaining(seconds);
+      setPhase('countdown');
+      sound.startSpin();
 
-    void runDrawAction(meetingId, requestedWinners, countdownSeconds).then((result) => {
-      if (result.ok && result.winners) {
-        resultRef.current = result.winners;
-        setDrawId(result.drawId ?? null);
-      } else {
-        resultRef.current = null;
-        setError(result.error ?? 'UNKNOWN');
-      }
-    });
-  }, [meetingId, requestedWinners, countdownSeconds, sound]);
+      void decide().then((result) => {
+        if (result.ok && result.winners) {
+          resultRef.current = result.winners;
+          if (result.drawId) setDrawId(result.drawId);
+        } else {
+          resultRef.current = null;
+          setError(result.error ?? 'UNKNOWN');
+        }
+      });
+    },
+    [sound],
+  );
+
+  const start = useCallback(() => {
+    runSequence(countdownSeconds, () =>
+      runDrawAction(meetingId, requestedWinners, countdownSeconds),
+    );
+  }, [runSequence, meetingId, requestedWinners, countdownSeconds]);
+
+  /**
+   * "Al agua": se descarta al ganador y se sortea un reemplazo sobre el MISMO
+   * universo, sin la persona descalificada (la exclusion la resuelve el servidor).
+   *
+   * Se repite la cuenta regresiva, mas corta que la del sorteo inicial: la tension
+   * ya se construyo una vez y alargarla otra vez completa se hace pesado en vivo.
+   */
+  const handleAlAgua = useCallback(
+    (winnerId: string, reason: string | null) => {
+      runSequence(AL_AGUA_COUNTDOWN_SECONDS, () => alAguaAction(meetingId, winnerId, reason));
+    },
+    [runSequence, meetingId],
+  );
 
   // Cuenta regresiva (seccion 28).
   useEffect(() => {
@@ -310,7 +339,7 @@ export function DrawStage({
               meetingId={meetingId}
               drawId={drawId}
               winners={winners}
-              onChanged={setWinners}
+              onAlAgua={handleAlAgua}
             />
           </footer>
         </>

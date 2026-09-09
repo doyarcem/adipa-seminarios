@@ -3,18 +3,19 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { alAguaAction, validateWinnerAction, type WinnerDto } from '@/server/actions/draws';
+import { validateWinnerAction, type WinnerDto } from '@/server/actions/draws';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface Props {
   meetingId: string;
   drawId: string | null;
   winners: WinnerDto[];
-  onChanged: (winners: WinnerDto[]) => void;
+  /** Entrega el descarte al escenario, que repite la cuenta regresiva. */
+  onAlAgua: (winnerId: string, reason: string | null) => void;
 }
 
 /** Acciones sobre el ganador: copiar, validar y "Al agua" (secciones 12, 33 y 35). */
-export function WinnerActions({ meetingId, drawId, winners, onChanged }: Props) {
+export function WinnerActions({ meetingId, drawId, winners, onAlAgua }: Props) {
   const tw = useTranslations('winner');
   const tc = useTranslations('confirm');
   const tCommon = useTranslations('common');
@@ -53,19 +54,22 @@ export function WinnerActions({ meetingId, drawId, winners, onChanged }: Props) 
     });
   };
 
+  /**
+   * El reemplazo NO se resuelve aqui.
+   *
+   * Antes esta accion llamaba al servidor y cambiaba el nombre en pantalla de
+   * golpe. Ahora avisa al escenario, que vuelve a montar la cuenta regresiva y la
+   * ruleta: el publico ve la misma puesta en escena que en el sorteo original, en
+   * vez de un cambio silencioso de nombre.
+   */
   const confirmAlAgua = () => {
     if (!alAguaTarget) return;
     const target = alAguaTarget;
+
     setAlAguaTarget(null);
     setError(null);
-
-    startTransition(async () => {
-      const result = await alAguaAction(meetingId, target.id, reason || null);
-      setReason('');
-
-      if (result.ok && result.winners) onChanged(result.winners);
-      else setError(result.error === 'NO_REPLACEMENT' ? 'No quedan participantes disponibles.' : 'UNKNOWN');
-    });
+    setReason('');
+    onAlAgua(target.id, reason.trim() || null);
   };
 
   return (
