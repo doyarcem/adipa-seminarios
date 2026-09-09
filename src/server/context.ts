@@ -10,27 +10,33 @@ import 'server-only';
 import { ZoomSimulator, type SimulatorConfig } from '@/lib/zoom/simulator';
 import { getZoomMode, hasLiveCredentials, type ZoomProvider } from '@/lib/zoom/provider';
 import { MemoryDrawStore } from './store/memory';
+import { PrismaDrawStore } from './store/prisma';
 import type { DrawStore } from './store/types';
 
 // ─────────────────────────── persistencia ───────────────────────────
 
 let storeInstance: DrawStore | null = null;
 
+/** true cuando hay una base de datos configurada. */
+const hasDatabase = () => Boolean(process.env.DATABASE_URL?.trim());
+
 /**
- * Hoy siempre devuelve el almacen en memoria.
+ * Devuelve el almacen segun el entorno.
  *
- * Para conectar Postgres: escribir `PrismaDrawStore implements DrawStore` y
- * devolverlo aqui cuando exista DATABASE_URL. Ni los servicios ni las pantallas
- * cambian.
+ * Con DATABASE_URL, Postgres. Sin ella, memoria del proceso: sirve para
+ * desarrollo local, pero NO para un despliegue serverless, donde cada peticion
+ * puede caer en una instancia distinta y no encontrar lo que escribio la anterior.
  */
 export function getStore(): DrawStore {
-  if (!storeInstance) storeInstance = new MemoryDrawStore();
+  if (!storeInstance) {
+    storeInstance = hasDatabase() ? new PrismaDrawStore() : new MemoryDrawStore();
+  }
   return storeInstance;
 }
 
-/** true si los datos se pierden al reiniciar. La UI lo avisa al operador. */
+/** true si los datos se pierden al reiniciar. */
 export function isEphemeralStore(): boolean {
-  return true;
+  return !hasDatabase();
 }
 
 // ─────────────────────────── Zoom ───────────────────────────

@@ -7,8 +7,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Conexion agrupada (pooler), la que usa la aplicacion en serverless.
+  url       = env("DATABASE_URL")
+  // Conexion directa, obligatoria para las migraciones: el pooler no las admite.
+  directUrl = env("DIRECT_URL")
 }
 
 // --------------------------- Usuarios y roles ---------------------------
