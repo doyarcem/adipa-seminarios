@@ -55,6 +55,63 @@ export async function selectMeeting(formData: FormData): Promise<void> {
 }
 
 /**
+ * Limpia todo lo registrado de una reunion.
+ *
+ * Borra snapshots, participantes, sorteos y ganadores, de modo que la tarjeta
+ * vuelve a mostrarse sin la etiqueta "Sorteo realizado" y el proximo sorteo
+ * arranca desde cero, sin arrastrar ganadores previos.
+ *
+ * Recibe la reunion por su identidad de Zoom y no por el id interno porque la
+ * tarjeta puede no tener uno todavia: si nadie la selecciono, no hay nada que
+ * borrar y la accion termina sin error.
+ *
+ * Lo que NO se borra es la auditoria (seccion 38). Limpiar la vista del monitor
+ * es una cosa; borrar el rastro de que hubo un sorteo seria otra muy distinta, y
+ * dejaria la aplicacion sin forma de explicar que ocurrio ese dia.
+ */
+export async function resetMeetingAction(
+  zoomAccountId: string,
+  meetingUuid: string,
+): Promise<ActionResult> {
+  const ctx = await requirePermission('meetings.reset');
+  const store = getStore();
+
+  const meeting = await store.findMeetingByUuid(zoomAccountId, meetingUuid);
+  if (!meeting) {
+    // No hay registro: la reunion ya esta limpia. Se responde ok para que el
+    // monitor no vea un error por pedir algo que ya se cumple.
+    revalidatePath('/monitor');
+    return { ok: true };
+  }
+
+  const draws = await store.listDraws(meeting.id);
+  const snapshots = await store.listSnapshots(meeting.id);
+
+  // La auditoria se escribe ANTES del borrado: despues ya no se podria saber
+  // cuanto se elimino.
+  await store.audit({
+    action: 'MEETING_RESET',
+    actorId: ctx.userId,
+    actorEmail: ctx.email,
+    meetingId: meeting.id,
+    snapshotId: null,
+    drawId: null,
+    detail: {
+      topic: meeting.topic,
+      zoomAccountName: meeting.zoomAccountName,
+      deletedDraws: draws.length,
+      deletedSnapshots: snapshots.length,
+      deletedWinners: draws.reduce((total, d) => total + d.winners.length, 0),
+    },
+  });
+
+  await store.resetMeeting(meeting.id, { userId: ctx.userId, email: ctx.email, name: ctx.name });
+
+  revalidatePath('/monitor');
+  return { ok: true };
+}
+
+/**
  * Extrae o actualiza participantes (secciones 10 y 11).
  *
  * Es la misma accion para ambos botones: "Actualizar" simplemente crea otro

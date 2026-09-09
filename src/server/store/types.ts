@@ -157,6 +157,18 @@ export interface DrawStore {
   getMeeting(meetingId: string): Promise<StoredMeeting | null>;
   findMeetingByUuid(zoomAccountId: string, uuid: string): Promise<StoredMeeting | null>;
 
+  /**
+   * Borra TODO lo registrado de una reunion: snapshots, participantes, sorteos y
+   * ganadores. Al terminar, la reunion vuelve a verse como si nunca se hubiera
+   * seleccionado.
+   *
+   * Es la unica operacion destructiva del repositorio y existe deliberadamente
+   * acotada: la auditoria NO se borra (sus columnas de reunion, snapshot y sorteo
+   * no son claves foraneas, justamente para que sobrevivan a esto). La bitacora
+   * de la seccion 38 sigue contando lo que paso, incluido el propio borrado.
+   */
+  resetMeeting(meetingId: string, actor: Actor): Promise<void>;
+
   // ── snapshots ──
   createSnapshot(input: CreateSnapshotInput): Promise<SnapshotWithParticipants>;
   getSnapshot(snapshotId: string): Promise<SnapshotWithParticipants | null>;

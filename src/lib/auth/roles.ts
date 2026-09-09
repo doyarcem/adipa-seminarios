@@ -94,6 +94,7 @@ export const PERMISSIONS = {
     'settings.manage',
     'audit.view',
     'meetings.select',
+    'meetings.reset',
     'participants.extract',
     'participants.override',
     'draw.run',
@@ -104,6 +105,7 @@ export const PERMISSIONS = {
   OPERATOR: [
     'zoom.view',
     'meetings.select',
+    'meetings.reset',
     'participants.extract',
     'participants.override',
     'draw.run',

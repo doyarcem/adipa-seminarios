@@ -233,6 +233,31 @@ export class PrismaDrawStore implements DrawStore {
     return row ? toMeeting(row) : null;
   }
 
+  /**
+   * Deja la reunion como si nunca se hubiera seleccionado.
+   *
+   * El orden importa y no se puede delegar del todo al ON DELETE CASCADE de la
+   * reunion: `Draw.snapshotId` es RESTRICT, asi que borrar la reunion podria
+   * intentar eliminar el snapshot mientras un sorteo todavia lo referencia. Se
+   * borran primero los sorteos (que arrastran ganadores y comprobantes), luego
+   * los snapshots (que arrastran participantes y decisiones manuales) y al final
+   * la reunion.
+   *
+   * Todo en una transaccion: un borrado a medias dejaria la reunion en un estado
+   * peor que el que se queria limpiar.
+   *
+   * La auditoria queda intacta: sus columnas de reunion, snapshot y sorteo son
+   * texto suelto, no claves foraneas, precisamente para sobrevivir a esto.
+   */
+  async resetMeeting(meetingId: string): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await tx.draw.deleteMany({ where: { meetingId } });
+      await tx.snapshot.deleteMany({ where: { meetingId } });
+      await tx.liveRosterEntry.deleteMany({ where: { meetingId } });
+      await tx.meeting.deleteMany({ where: { id: meetingId } });
+    });
+  }
+
   // ─────────────────────────── snapshots ───────────────────────────
 
   async createSnapshot(input: CreateSnapshotInput): Promise<SnapshotWithParticipants> {

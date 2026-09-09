@@ -432,3 +432,74 @@ describe('aislamiento entre reuniones (seccion 54)', () => {
     }
   });
 });
+
+describe('limpiar datos de una reunion', () => {
+  it('deja la reunion como si nunca se hubiera seleccionado', async () => {
+    const { meeting } = await extractFirstMeeting();
+    const store = getStore();
+
+    const record = await store.findMeetingByUuid(meeting.zoomAccountId, meeting.uuid);
+    await executeDraw({ meetingId: record!.id, requestedWinners: 1, countdownSeconds: 3, actor });
+
+    const conSorteo = await listActiveMeetings();
+    const antes = conSorteo.meetings.find((m) => m.uuid === meeting.uuid)!;
+    expect(antes.hasCompletedDraw).toBe(true);
+    expect(antes.hasActiveSnapshot).toBe(true);
+
+    await store.resetMeeting(record!.id, actor);
+
+    const despues = await listActiveMeetings();
+    const limpia = despues.meetings.find((m) => m.uuid === meeting.uuid)!;
+    expect(limpia.hasCompletedDraw).toBe(false);
+    expect(limpia.hasActiveSnapshot).toBe(false);
+    expect(limpia.meetingRecordId).toBeNull();
+
+    // Nada quedo colgando de la reunion borrada.
+    expect(await store.getMeeting(record!.id)).toBeNull();
+    expect(await store.listDraws(record!.id)).toHaveLength(0);
+    expect(await store.listSnapshots(record!.id)).toHaveLength(0);
+  });
+
+  it('el siguiente sorteo ya no arrastra a los ganadores anteriores', async () => {
+    const { meeting } = await extractFirstMeeting();
+    const store = getStore();
+
+    const record = await store.findMeetingByUuid(meeting.zoomAccountId, meeting.uuid);
+    const primero = await executeDraw({
+      meetingId: record!.id,
+      requestedWinners: 1,
+      countdownSeconds: 3,
+      actor,
+    });
+    const ganadorPrevio = primero.winners[0].winnerName;
+
+    expect(await store.listPreviousWinnerNames(record!.id)).toContain(ganadorPrevio);
+
+    await store.resetMeeting(record!.id, actor);
+
+    // Se vuelve a extraer: el snapshot nuevo no debe excluir a nadie por
+    // PREVIOUS_WINNER, porque para la aplicacion ese sorteo nunca ocurrio.
+    const { snapshot, participants } = await extractFirstMeeting();
+    const nuevoRecord = await store.findMeetingByUuid(meeting.zoomAccountId, meeting.uuid);
+
+    expect(snapshot.sequence).toBe(1);
+    expect(await store.listPreviousWinnerNames(nuevoRecord!.id)).toHaveLength(0);
+    expect(participants.some((p) => p.exclusionReason === 'PREVIOUS_WINNER')).toBe(false);
+  });
+
+  it('la auditoria sobrevive al borrado (seccion 38)', async () => {
+    const { meeting } = await extractFirstMeeting();
+    const store = getStore();
+
+    const record = await store.findMeetingByUuid(meeting.zoomAccountId, meeting.uuid);
+    await executeDraw({ meetingId: record!.id, requestedWinners: 1, countdownSeconds: 3, actor });
+
+    const antes = await store.listAudit({ meetingId: record!.id });
+    expect(antes.length).toBeGreaterThan(0);
+
+    await store.resetMeeting(record!.id, actor);
+
+    const despues = await store.listAudit({ meetingId: record!.id });
+    expect(despues.length).toBe(antes.length);
+  });
+});

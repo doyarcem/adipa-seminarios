@@ -90,6 +90,35 @@ export class MemoryDrawStore implements DrawStore {
     return found ? clone(found) : null;
   }
 
+  /**
+   * Deja la reunion como si nunca se hubiera seleccionado.
+   *
+   * Se recorre en cascada a mano: ganadores -> sorteos -> participantes ->
+   * snapshots -> reunion. Borrar la reunion sola dejaria snapshots y sorteos
+   * huerfanos en los Map, que seguirian contando en `listDraws` de una reunion
+   * futura con el mismo id.
+   *
+   * La auditoria se conserva entera, incluida la entrada del propio borrado.
+   */
+  async resetMeeting(meetingId: string): Promise<void> {
+    const snapshotIds = [...db.snapshots.values()]
+      .filter((s) => s.meetingId === meetingId)
+      .map((s) => s.id);
+    const drawIds = [...db.draws.values()].filter((d) => d.meetingId === meetingId).map((d) => d.id);
+
+    for (const [id, winner] of db.winners) {
+      if (drawIds.includes(winner.drawId)) db.winners.delete(id);
+    }
+    for (const id of drawIds) db.draws.delete(id);
+
+    for (const [id, participant] of db.participants) {
+      if (snapshotIds.includes(participant.snapshotId)) db.participants.delete(id);
+    }
+    for (const id of snapshotIds) db.snapshots.delete(id);
+
+    db.meetings.delete(meetingId);
+  }
+
   // ─────────────────────────── snapshots ───────────────────────────
 
   async createSnapshot(input: CreateSnapshotInput): Promise<SnapshotWithParticipants> {

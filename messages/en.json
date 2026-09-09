@@ -44,6 +44,11 @@
     "startTime": "Start time",
     "participantCount": "Participants",
     "drawCompleted": "Draw completed",
+    "reset": "Clear data",
+    "resetting": "Clearing…",
+    "resetConfirmTitle": "Clear this seminar's data?",
+    "resetConfirmBody": "The extracted participants and the draws run for {topic} will be deleted. The seminar will look as if it had never been opened. This cannot be undone.",
+    "resetFailed": "We could not clear the data. Please try again.",
     "refresh": "Refresh meetings",
     "empty": "We could not find any active meetings in the linked Zoom accounts.",
     "emptyHint": "Make sure the meeting has already started and try again."

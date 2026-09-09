@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { getLocale } from 'next-intl/server';
 import { selectMeeting } from '@/server/actions/meetings';
 import type { LiveMeetingCard } from '@/server/services/meetings';
+import { ResetMeetingButton } from '@/components/ResetMeetingButton';
 
 /** Tarjeta de reunion activa (seccion 9). */
 export async function MeetingCard({ meeting }: { meeting: LiveMeetingCard }) {
@@ -72,6 +73,14 @@ export async function MeetingCard({ meeting }: { meeting: LiveMeetingCard }) {
           {t('select')}
         </button>
       </form>
+
+      {/* Debajo de "Seleccionar": devuelve el seminario a cero cuando el sorteo
+          fue una prueba o hay que repetirlo desde el principio. */}
+      <ResetMeetingButton
+        zoomAccountId={meeting.zoomAccountId}
+        meetingUuid={meeting.uuid}
+        topic={meeting.topic}
+      />
     </article>
   );
 }

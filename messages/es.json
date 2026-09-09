@@ -44,6 +44,11 @@
     "startTime": "Hora de inicio",
     "participantCount": "Participantes",
     "drawCompleted": "Sorteo realizado",
+    "reset": "Limpiar datos",
+    "resetting": "Limpiando…",
+    "resetConfirmTitle": "¿Deseas limpiar los datos de este seminario?",
+    "resetConfirmBody": "Se borrarán los participantes extraídos y los sorteos realizados en «{topic}». El seminario quedará como si nunca se hubiera ingresado. Esta acción no se puede deshacer.",
+    "resetFailed": "No pudimos limpiar los datos. Vuelve a intentarlo.",
     "refresh": "Actualizar reuniones",
     "empty": "No encontramos reuniones activas disponibles en las cuentas de Zoom vinculadas.",
     "emptyHint": "Verifica que la reunión ya haya comenzado y vuelve a intentar."
