@@ -147,26 +147,41 @@ function renderSpin() {
   }
 
   /*
-   * Cama continua de bordonas. Se filtra dando DOS vueltas al buffer y quedandose
-   * con la segunda: asi el estado del filtro al final coincide con el del
-   * principio y el bucle no tiene salto.
+   * Cama continua de bordonas, PERIODICA POR CONSTRUCCION.
+   *
+   * Antes se filtraba ruido blanco y se calentaba el filtro dando dos vueltas al
+   * buffer. Eso igualaba el caracter del sonido en los extremos, pero no los
+   * valores: quedaba un salto de ~0,05 entre la ultima muestra y la primera, que
+   * al reproducirse en bucle se oye como un clic.
+   *
+   * Aqui la cama se construye sumando sinusoides cuyas frecuencias son multiplos
+   * EXACTOS de 1/duracion. Cada componente completa un numero entero de ciclos
+   * dentro del buffer, asi que el final empalma con el principio con continuidad
+   * matematica: el salto es cero, no "casi cero".
    */
   const bed = new Float64Array(total);
-  let sizzle = 0;
+  const bedRandom = makeRandom(13579);
+  const fundamental = 1 / duration; // 0,5 Hz con un buffer de 2 s
 
-  for (let vuelta = 0; vuelta < 2; vuelta++) {
-    // La misma semilla en ambas vueltas produce el mismo ruido; lo que se arrastra
-    // entre vueltas es el estado del filtro, que es justo lo que hace que el final
-    // del buffer empalme con su principio.
-    const bedRandom = makeRandom(13579);
+  const PARTIALS = 500;
+  const MIN_HZ = 2500;
+  const MAX_HZ = 9000;
+
+  for (let p = 0; p < PARTIALS; p++) {
+    // Se ajusta cada frecuencia al multiplo mas cercano del fundamental.
+    const target = MIN_HZ + bedRandom() * (MAX_HZ - MIN_HZ);
+    const harmonic = Math.round(target / fundamental);
+    const frequency = harmonic * fundamental;
+    const phase = bedRandom() * Math.PI * 2;
+
     for (let i = 0; i < total; i++) {
-      const noise = bedRandom() * 2 - 1;
-      sizzle += (noise - sizzle) * 0.6;
-      if (vuelta === 1) bed[i] = sizzle;
+      bed[i] += Math.sin((2 * Math.PI * frequency * i) / SAMPLE_RATE + phase);
     }
   }
 
-  for (let i = 0; i < total; i++) samples[i] += bed[i] * 0.13;
+  // La suma de N sinusoides con fase aleatoria crece como raiz de N.
+  const bedGain = 0.13 / Math.sqrt(PARTIALS);
+  for (let i = 0; i < total; i++) samples[i] += bed[i] * bedGain;
 
   return normalize(Array.from(samples), 0.72);
 }
