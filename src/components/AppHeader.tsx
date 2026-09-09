@@ -4,6 +4,7 @@ import { getLocale } from 'next-intl/server';
 import { LOCALES, LOCALE_LABELS, type Locale } from '@/i18n/config';
 import { setLocale, setPreviewRole, signOutAction } from '@/server/actions/session';
 import { isAuthBypassEnabled } from '@/lib/auth/bypass';
+import { isDemoLoginExposed } from '@/lib/auth/demoMode';
 import { AdipaLogo } from '@/components/AdipaLogo';
 import type { Role } from '@/lib/auth/roles';
 
@@ -19,9 +20,19 @@ export async function AppHeader({ userName, userEmail, role, context }: Props) {
   const t = await getTranslations('common');
   const locale = (await getLocale()) as Locale;
   const previewMode = isAuthBypassEnabled();
+  const demoExpuesto = isDemoLoginExposed();
 
   return (
     <>
+      {/* El acceso de demostracion esta abierto en un despliegue publico: se avisa
+          de forma permanente para que nadie lo confunda con autenticacion real. */}
+      {demoExpuesto && (
+        <div className="bg-brand-red px-4 py-2 text-center text-[12px] font-semibold text-white">
+          Acceso de demostración con contraseña compartida. No uses esta URL para sorteos
+          reales ni la difundas fuera del equipo.
+        </div>
+      )}
+
       {/* Aviso imposible de ignorar mientras el login esta desactivado. */}
       {previewMode && (
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-brand-orange px-4 py-2 text-center text-[12px] font-semibold text-white">

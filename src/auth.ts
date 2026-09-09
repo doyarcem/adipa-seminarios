@@ -19,6 +19,9 @@ import Google from 'next-auth/providers/google';
 import Zoom from 'next-auth/providers/zoom';
 import type { Provider } from 'next-auth/providers';
 import { canSignIn, resolveRole, type Role } from '@/lib/auth/roles';
+import { isDevAuthEnabled } from '@/lib/auth/demoMode';
+
+export { isDevAuthEnabled, isDemoLoginExposed } from '@/lib/auth/demoMode';
 import { verifyDemoLogin } from '@/lib/auth/demoAccounts';
 
 declare module 'next-auth' {
@@ -33,15 +36,6 @@ declare module 'next-auth' {
       locale: string;
     };
   }
-}
-
-/**
- * El modo prueba solo se habilita con una variable explicita y NUNCA en produccion.
- * Las dos condiciones son necesarias: si alguien despliega con AUTH_DEV_MODE=true
- * por descuido, NODE_ENV lo bloquea igual.
- */
-export function isDevAuthEnabled(): boolean {
-  return process.env.AUTH_DEV_MODE === 'true' && process.env.NODE_ENV !== 'production';
 }
 
 /** Mientras no haya base de datos, los usuarios no se persisten. */
