@@ -130,7 +130,9 @@
     "fewerThanRequested": "Se seleccionarán {actual} de los {requested} solicitados, porque es la cantidad disponible.",
     "muteSound": "Silenciar",
     "unmuteSound": "Activar sonido",
-    "volume": "Volumen"
+    "volume": "Volumen",
+    "backToSeminars": "Volver a los seminarios disponibles",
+    "backToParticipants": "Volver a los participantes"
   },
   "winner": {
     "single": "¡Tenemos ganador!",

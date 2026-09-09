@@ -88,7 +88,7 @@ function applyEdgeFades(samples, fadeSeconds = 0.005) {
  * el archivo no hay ni silencio ni corte en la union.
  */
 function renderStroke(target, startSample, random, amplitude) {
-  const length = seconds(0.16);
+  const length = seconds(0.30);
   let lowpass = 0;
   let highpass = 0;
   let previousNoise = 0;
@@ -99,7 +99,7 @@ function renderStroke(target, startSample, random, amplitude) {
     const t = i / SAMPLE_RATE;
     // Caida mas lenta que antes: las colas de golpes sucesivos se solapan y el
     // redoble se percibe sostenido en vez de como golpes sueltos.
-    const envelope = Math.exp(-t * 20);
+    const envelope = Math.exp(-t * 10);
 
     const noise = random() * 2 - 1;
 
@@ -107,7 +107,7 @@ function renderStroke(target, startSample, random, amplitude) {
     highpass = 0.85 * (highpass + noise - previousNoise);
     previousNoise = noise;
 
-    const body = Math.sin(2 * Math.PI * 185 * t) * Math.exp(-t * 30) * 0.35;
+    const body = Math.sin(2 * Math.PI * 185 * t) * Math.exp(-t * 18) * 0.35;
 
     target[index] += (lowpass * 0.5 + highpass * 0.55 + body) * envelope * amplitude;
   }
@@ -135,7 +135,7 @@ function renderSpin() {
 
   // Velocidad del redoble. Mas alto suena a redoble cerrado ("buzz"), mas bajo
   // deja oir cada golpe por separado.
-  const strokesPerSecond = 14;
+  const strokesPerSecond = 7;
   const strokeCount = Math.round(duration * strokesPerSecond);
   const interval = total / strokeCount;
 
@@ -166,7 +166,7 @@ function renderSpin() {
     }
   }
 
-  for (let i = 0; i < total; i++) samples[i] += bed[i] * 0.10;
+  for (let i = 0; i < total; i++) samples[i] += bed[i] * 0.13;
 
   return normalize(Array.from(samples), 0.72);
 }

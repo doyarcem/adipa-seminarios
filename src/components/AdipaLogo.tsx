@@ -23,7 +23,13 @@ import { useEffect, useRef, useState } from 'react';
  */
 
 export type LogoVariant = 'logotype' | 'isotype';
-export type LogoMode = 'full-color' | 'white';
+
+/**
+ * - `full-color`  : arte original, para fondos blancos o #F3F4FF
+ * - `white`       : arte original dentro de caja blanca, para fondos de marca (6.3)
+ * - `white-mono`  : version blanca monocromatica, sin caja (6.2)
+ */
+export type LogoMode = 'full-color' | 'white' | 'white-mono';
 
 interface Props {
   variant?: LogoVariant;
@@ -41,14 +47,17 @@ interface Props {
 const FILES: Record<LogoVariant, Record<LogoMode, string>> = {
   logotype: {
     // Archivo oficial entregado por ADIPA (full-color, fondo transparente).
-    // Se usa el MISMO archivo para "white": sobre fondos de marca se presenta dentro
-    // de una caja blanca (ver render, DESIGN.md 6.3), sin recolorear el original.
+    // Se usa el MISMO archivo en los tres modos: "white" lo presenta dentro de una
+    // caja blanca (DESIGN.md 6.3) y "white-mono" lo pinta en blanco solido, sin
+    // redibujarlo. Ver la nota en el render de abajo.
     'full-color': '/brand/logos/adipa-logotype-full-color.png',
     white: '/brand/logos/adipa-logotype-full-color.png',
+    'white-mono': '/brand/logos/adipa-logotype-full-color.png',
   },
   isotype: {
     'full-color': '/brand/logos/adipa-isotype-full-color.svg',
     white: '/brand/logos/adipa-isotype-white.svg',
+    'white-mono': '/brand/logos/adipa-isotype-white.svg',
   },
 };
 
@@ -81,7 +90,7 @@ export function AdipaLogo({
     return (
       <span
         className={`font-bold leading-none tracking-tight ${
-          mode === 'white' ? 'text-white' : 'text-brand-primary'
+          mode === 'full-color' ? 'text-brand-primary' : 'text-white'
         } ${wordmarkClassName ?? ''} ${className}`}
         style={wordmarkClassName ? undefined : { fontSize: height * 0.72, lineHeight: 1 }}
       >
@@ -98,7 +107,23 @@ export function AdipaLogo({
       alt="Adipa"
       height={height}
       // Alto fijo y ancho automatico: la imagen nunca se deforma.
-      style={{ height, width: 'auto' }}
+      style={{
+        height,
+        width: 'auto',
+        /*
+         * Version blanca monocromatica (DESIGN.md 6.2), que el manual aprueba
+         * expresamente sobre morado, cyan y navy de marca.
+         *
+         * Se obtiene del arte oficial: brightness(0) lo lleva a negro solido e
+         * invert(1) lo pasa a blanco, conservando la silueta exacta del archivo.
+         * NO es redibujar ni recolorear a un color arbitrario; es producir la
+         * version blanca aprobada a partir del original.
+         *
+         * PENDIENTE: cuando ADIPA entregue `adipa-logotype-white.png`, quitar el
+         * filtro y apuntar `white-mono` a ese archivo.
+         */
+        filter: mode === 'white-mono' ? 'brightness(0) invert(1)' : undefined,
+      }}
       onError={() => setMissing(true)}
       className={mode === 'white' ? 'block' : className}
     />

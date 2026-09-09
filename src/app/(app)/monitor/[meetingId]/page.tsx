@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { requirePageAccess } from '@/server/authz';
@@ -29,7 +30,10 @@ export default async function OperatorConsolePage({
     store.listDraws(meetingId),
   ]);
 
-  const t = await getTranslations('participants');
+  const [t, td] = await Promise.all([
+    getTranslations('participants'),
+    getTranslations('draw'),
+  ]);
 
   // Los ganadores previos ya no estan disponibles para el proximo sorteo (seccion 24).
   const previousWinners = new Set(await store.listPreviousWinnerNames(meetingId));
@@ -43,6 +47,15 @@ export default async function OperatorConsolePage({
 
       <main className="mx-auto max-w-350 px-4 py-8 sm:px-6 lg:px-8">
         {isSimulatorMode() && <SimulatorBanner />}
+
+        {/* Hasta ahora la unica salida desde aqui era pulsar el logo, que no se lee
+            como un boton. Este enlace hace explicita la vuelta al listado. */}
+        <Link
+          href="/monitor"
+          className="mb-4 inline-flex items-center gap-1.5 rounded-adipa-control border border-border-subtle bg-white px-3.5 py-2 text-[13px] font-semibold text-fg-muted transition hover:border-brand-primary/30 hover:text-brand-primary"
+        >
+          ← {td('backToSeminars')}
+        </Link>
 
         <header className="mb-6">
           <div className="flex items-center gap-2.5">

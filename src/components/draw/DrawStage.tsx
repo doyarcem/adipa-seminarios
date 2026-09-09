@@ -26,6 +26,11 @@ const SPIN_MS = 1800;
 /** Cada cuanto cambia el nombre en la ruleta. */
 const REEL_TICK_MS = 80;
 
+/** Alto del logo en la antesala. La revelacion usa el doble. */
+const LOGO_HEIGHT_READY = 32;
+/** Durante la cuenta regresiva la marca crece para ganar presencia. */
+const LOGO_HEIGHT_COUNTDOWN = 56;
+
 export function DrawStage({
   meetingId,
   topic,
@@ -167,21 +172,42 @@ export function DrawStage({
         }`}
       >
         <div className="transition-all duration-500">
+          {/* En la revelacion el logo va en blanco monocromatico y SIN caja, para
+              que contraste directamente con el degradado, y al doble del tamano
+              que tiene en la antesala (LOGO_HEIGHT_READY). */}
           <AdipaLogo
-            mode="white"
-            height={phase === 'winner' ? 96 : showLargeLogo ? 56 : 32}
-            wordmarkClassName={phase === 'winner' ? 'text-[clamp(2.5rem,9vw,7rem)]' : undefined}
+            mode={phase === 'winner' ? 'white-mono' : 'white'}
+            height={
+              phase === 'winner'
+                ? LOGO_HEIGHT_READY * 2
+                : showLargeLogo
+                  ? LOGO_HEIGHT_COUNTDOWN
+                  : LOGO_HEIGHT_READY
+            }
           />
         </div>
 
         <div className={`flex items-center gap-2 ${showLargeLogo ? 'mr-auto' : 'ml-auto'}`}>
-          {!onStage && (
-            <Link
-              href={`/monitor/${meetingId}`}
-              className="rounded-adipa-control px-3 py-1.5 text-[13px] font-semibold text-white/80 transition hover:bg-white/15"
-            >
-              ← Volver
-            </Link>
+          {/* Durante la cuenta regresiva y la ruleta se ocultan: la pantalla esta
+              compartida y no debe competir nada con el sorteo. */}
+          {!showLargeLogo && (
+            <>
+              <Link
+                href="/monitor"
+                className="rounded-adipa-control bg-white/15 px-3 py-1.5 text-[13px] font-semibold text-white ring-1 ring-white/25 transition hover:bg-white/25"
+              >
+                ← {t('backToSeminars')}
+              </Link>
+
+              {!onStage && (
+                <Link
+                  href={`/monitor/${meetingId}`}
+                  className="rounded-adipa-control px-3 py-1.5 text-[13px] font-semibold text-white/80 transition hover:bg-white/15"
+                >
+                  {t('backToParticipants')}
+                </Link>
+              )}
+            </>
           )}
 
           {/* Control de audio: silenciar y regular el volumen del redoble. */}

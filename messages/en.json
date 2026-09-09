@@ -130,7 +130,9 @@
     "fewerThanRequested": "{actual} of the {requested} requested will be selected, because that is how many are available.",
     "muteSound": "Mute",
     "unmuteSound": "Unmute",
-    "volume": "Volume"
+    "volume": "Volume",
+    "backToSeminars": "Back to available seminars",
+    "backToParticipants": "Back to participants"
   },
   "winner": {
     "single": "We have a winner!",
