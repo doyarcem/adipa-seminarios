@@ -26,10 +26,8 @@ const SPIN_MS = 1800;
 /** Cada cuanto cambia el nombre en la ruleta. */
 const REEL_TICK_MS = 80;
 
-/** Alto del logo en la antesala. La revelacion usa el doble. */
-const LOGO_HEIGHT_READY = 32;
-/** Durante la cuenta regresiva la marca crece para ganar presencia. */
-const LOGO_HEIGHT_COUNTDOWN = 56;
+/** Alto del logo, identico en todas las fases del sorteo. */
+const LOGO_HEIGHT = 64;
 
 export function DrawStage({
   meetingId,
@@ -163,31 +161,16 @@ export function DrawStage({
          cambiar el fondo a mitad de camino distraia de lo que importa. */
       className="adipa-gradient relative flex min-h-dvh flex-col overflow-hidden text-white"
     >
-      {/* Durante la funcion el orden se invierte: el logo pasa a la esquina superior
-          derecha y los controles se van a la izquierda, atenuados. Asi la marca ocupa
-          el lugar de mayor peso visual justo cuando todos estan mirando. */}
-      <header
-        className={`relative z-20 flex items-start gap-3 px-6 py-5 ${
-          showLargeLogo ? 'flex-row-reverse' : ''
-        }`}
-      >
-        <div className="transition-all duration-500">
-          {/* En la revelacion el logo va en blanco monocromatico y SIN caja, para
-              que contraste directamente con el degradado, y al doble del tamano
-              que tiene en la antesala (LOGO_HEIGHT_READY). */}
-          <AdipaLogo
-            mode={phase === 'winner' ? 'white-mono' : 'white'}
-            height={
-              phase === 'winner'
-                ? LOGO_HEIGHT_READY * 2
-                : showLargeLogo
-                  ? LOGO_HEIGHT_COUNTDOWN
-                  : LOGO_HEIGHT_READY
-            }
-          />
-        </div>
+      {/* El logo se queda SIEMPRE arriba a la izquierda y los controles a la
+          derecha, en todas las fases. Antes el orden se invertia durante la cuenta
+          regresiva: la marca saltaba de lado justo cuando la pantalla esta
+          compartida, que es cuando menos conviene que algo se mueva. */}
+      <header className="relative z-20 flex items-start gap-3 px-6 py-5">
+        {/* Un unico tratamiento de marca en todo el sorteo: blanco monocromatico,
+            sin caja, para que contraste directamente con el degradado. */}
+        <AdipaLogo mode="white-mono" height={LOGO_HEIGHT} />
 
-        <div className={`flex items-center gap-2 ${showLargeLogo ? 'mr-auto' : 'ml-auto'}`}>
+        <div className="ml-auto flex items-center gap-2">
           {/* Durante la cuenta regresiva y la ruleta se ocultan: la pantalla esta
               compartida y no debe competir nada con el sorteo. */}
           {!showLargeLogo && (
