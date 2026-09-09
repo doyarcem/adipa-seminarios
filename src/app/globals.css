@@ -139,9 +139,13 @@ body {
   animation: adipa-pulse-ring 1s ease-out infinite;
 }
 
+/* Entrada de cada nombre de la ruleta.
+   Dura MENOS que el intervalo entre nombres (80 ms) y arranca ya semiopaca: con
+   un fundido mas largo que el propio intervalo, ningun nombre llegaba a verse
+   entero y la caja parecia vacia. Ahora cada nombre se lee, aunque sea de reojo. */
 @keyframes adipa-reel-in {
   from {
-    opacity: 0;
+    opacity: 0.35;
     transform: translateY(38%);
   }
   to {
@@ -151,7 +155,7 @@ body {
 }
 
 .adipa-reel-item {
-  animation: adipa-reel-in 90ms linear;
+  animation: adipa-reel-in 55ms linear;
 }
 
 @keyframes adipa-winner-in {

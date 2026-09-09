@@ -145,17 +145,32 @@ export function DrawStage({
   const liveRef = useRef({ reelNames, sound, error });
   liveRef.current = { reelNames, sound, error };
 
-  // Ruleta (seccion 29): termina exactamente al acabar su ventana de tiempo.
+  /**
+   * Ruleta de nombres (seccion 29).
+   *
+   * Gira desde el primer segundo de la cuenta regresiva y no solo despues: los
+   * nombres pasando bajo el numero son lo que hace evidente que el sorteo esta
+   * ocurriendo de verdad y sobre gente real. Un numero bajando solo, sobre un
+   * fondo vacio, no cuenta nada.
+   */
+  const rolling = phase === 'countdown' || phase === 'spinning';
+
   useEffect(() => {
-    if (phase !== 'spinning') return;
+    if (!rolling) return;
 
     const reel = setInterval(() => {
       const names = liveRef.current.reelNames;
       setReelName(names[Math.floor(Math.random() * names.length)] ?? '');
     }, REEL_TICK_MS);
 
+    return () => clearInterval(reel);
+  }, [rolling]);
+
+  // Desenlace: la ruleta se detiene exactamente al acabar su ventana de tiempo.
+  useEffect(() => {
+    if (phase !== 'spinning') return;
+
     const finish = setTimeout(() => {
-      clearInterval(reel);
       liveRef.current.sound.stopSpin();
 
       if (liveRef.current.error || !resultRef.current) {
@@ -168,10 +183,7 @@ export function DrawStage({
       liveRef.current.sound.playWinner();
     }, SPIN_MS);
 
-    return () => {
-      clearInterval(reel);
-      clearTimeout(finish);
-    };
+    return () => clearTimeout(finish);
   }, [phase]);
 
   // Al desmontar, el redoble no puede quedar sonando.
@@ -285,32 +297,12 @@ export function DrawStage({
           />
         )}
 
-        {phase === 'countdown' && (
-          <div aria-live="polite">
-            <p className="mb-4 text-[clamp(1.5rem,4vw,3rem)] font-bold leading-tight tracking-tight text-white">
-              {topic}
-            </p>
-            <p className="adipa-countdown text-[clamp(8rem,26vw,20rem)]">{remaining}</p>
-            <p className="mt-2 text-[15px] font-medium uppercase tracking-[0.2em] text-white/70">
-              {t('seconds')}
-            </p>
-          </div>
-        )}
-
-        {phase === 'spinning' && (
-          <div className="w-full max-w-4xl">
-            <p className="mb-6 text-[clamp(1.5rem,4vw,3rem)] font-bold leading-tight tracking-tight text-white">
-              {topic}
-            </p>
-            <div className="mx-auto flex h-40 items-center justify-center overflow-hidden rounded-adipa-card bg-white/15 px-8 ring-1 ring-white/25">
-              <p
-                key={reelName}
-                className="adipa-reel-item truncate text-[clamp(1.75rem,6vw,4rem)] font-bold tracking-tight"
-              >
-                {reelName}
-              </p>
-            </div>
-          </div>
+        {rolling && (
+          <Rolling
+            topic={topic}
+            remaining={phase === 'countdown' ? remaining : null}
+            reelName={reelName}
+          />
         )}
 
         {phase === 'winner' && <WinnerReveal winners={winners} topic={topic} />}
@@ -344,6 +336,62 @@ export function DrawStage({
           </footer>
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Cuenta regresiva y ruleta, en una sola composicion.
+ *
+ * Antes eran dos pantallas distintas: primero un numero enorme centrado y, al
+ * llegar a cero, una caja de nombres. El corte entre ambas rompia justo el
+ * momento de mas tension. Ahora comparten disposicion: el numero vive arriba y
+ * los nombres ruedan en el centro desde el principio, de modo que al acabar la
+ * cuenta lo unico que ocurre es que el numero se apaga.
+ *
+ * El hueco del numero se reserva con una altura fija. Sin el, la caja de nombres
+ * subiria de golpe al desaparecer el numero, y ese salto se notaria en la
+ * pantalla compartida mas que cualquier otra cosa de la secuencia.
+ */
+function Rolling({
+  topic,
+  remaining,
+  reelName,
+}: {
+  topic: string;
+  /** null cuando la cuenta ya termino y solo queda la ruleta. */
+  remaining: number | null;
+  reelName: string;
+}) {
+  return (
+    <div className="w-full max-w-4xl">
+      <p className="mb-4 text-[clamp(1.25rem,3.2vw,2.5rem)] font-bold leading-tight tracking-tight text-white">
+        {topic}
+      </p>
+
+      <div
+        aria-live="polite"
+        className="flex h-[clamp(5rem,13vw,9.5rem)] items-center justify-center"
+      >
+        {remaining !== null && (
+          <p className="adipa-countdown text-[clamp(4.5rem,12vw,9rem)] leading-none">{remaining}</p>
+        )}
+      </div>
+
+      {/* Los nombres pasan demasiado rapido para leerlos: son atmosfera, no
+          informacion. Se ocultan a los lectores de pantalla, que anunciarian un
+          nombre nuevo cada 80 ms. */}
+      <div
+        aria-hidden
+        className="mx-auto mt-6 flex h-40 items-center justify-center overflow-hidden rounded-adipa-card bg-white/15 px-8 ring-1 ring-white/25"
+      >
+        <p
+          key={reelName}
+          className="adipa-reel-item truncate text-[clamp(1.75rem,6vw,4rem)] font-bold tracking-tight"
+        >
+          {reelName}
+        </p>
+      </div>
     </div>
   );
 }
