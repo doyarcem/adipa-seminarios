@@ -21,6 +21,7 @@ interface Props {
  */
 export function ResetMeetingButton({ zoomAccountId, meetingUuid, topic }: Props) {
   const t = useTranslations('meetings');
+  const tCommon = useTranslations('common');
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -56,7 +57,8 @@ export function ResetMeetingButton({ zoomAccountId, meetingUuid, topic }: Props)
         open={confirming}
         title={t('resetConfirmTitle')}
         body={t('resetConfirmBody', { topic })}
-        confirmLabel={t('reset')}
+        confirmLabel={tCommon('yes')}
+        cancelLabel={tCommon('no')}
         tone="danger"
         onConfirm={reset}
         onCancel={() => setConfirming(false)}

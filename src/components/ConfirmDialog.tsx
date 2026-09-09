@@ -8,6 +8,8 @@ interface Props {
   title: string;
   body: string;
   confirmLabel: string;
+  /** Texto del boton que anula. Por defecto, "Cancelar". */
+  cancelLabel?: string;
   /** Rojo para acciones destructivas como "Al agua". */
   tone?: 'default' | 'danger';
   onConfirm: () => void;
@@ -26,6 +28,7 @@ export function ConfirmDialog({
   title,
   body,
   confirmLabel,
+  cancelLabel,
   tone = 'default',
   onConfirm,
   onCancel,
@@ -65,14 +68,17 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
+            // En una accion destructiva el foco arranca aqui: si alguien pulsa
+            // Enter por inercia, la respuesta por defecto es no hacer nada.
+            autoFocus={tone === 'danger'}
             className="rounded-adipa-control border border-border-subtle px-4 py-2 text-[14px] font-semibold text-fg-muted transition hover:bg-brand-surface-soft"
           >
-            {t('cancel')}
+            {cancelLabel ?? t('cancel')}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            autoFocus
+            autoFocus={tone !== 'danger'}
             className={`rounded-adipa-control px-4 py-2 text-[14px] font-semibold text-white transition hover:opacity-90 ${
               tone === 'danger' ? 'bg-state-error' : 'adipa-gradient'
             }`}

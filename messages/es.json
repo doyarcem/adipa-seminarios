@@ -46,7 +46,7 @@
     "drawCompleted": "Sorteo realizado",
     "reset": "Limpiar datos",
     "resetting": "Limpiando…",
-    "resetConfirmTitle": "¿Deseas limpiar los datos de este seminario?",
+    "resetConfirmTitle": "¿Estás seguro/a de que deseas limpiar los datos del sorteo?",
     "resetConfirmBody": "Se borrarán los participantes extraídos y los sorteos realizados en «{topic}». El seminario quedará como si nunca se hubiera ingresado. Esta acción no se puede deshacer.",
     "resetFailed": "No pudimos limpiar los datos. Vuelve a intentarlo.",
     "refresh": "Actualizar reuniones",

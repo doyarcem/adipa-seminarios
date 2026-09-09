@@ -46,7 +46,7 @@
     "drawCompleted": "Draw completed",
     "reset": "Clear data",
     "resetting": "Clearing…",
-    "resetConfirmTitle": "Clear this seminar's data?",
+    "resetConfirmTitle": "Are you sure you want to clear the draw data?",
     "resetConfirmBody": "The extracted participants and the draws run for {topic} will be deleted. The seminar will look as if it had never been opened. This cannot be undone.",
     "resetFailed": "We could not clear the data. Please try again.",
     "refresh": "Refresh meetings",
